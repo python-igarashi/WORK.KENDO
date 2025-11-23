@@ -17,21 +17,3 @@
 
 # --- Google API の認証ファイル ---
 credentials_*.json
-
-
-# --- GoogleシートのTSVファイルをダウンロードするフォルダ。フォルダの中身は無視。 ---
-**/DownloadTSV/*
-!**/DownloadTSV/
-!**/DownloadTSV/.gitkeep
-
-
-# --- トーナメント表のファイルを出力するフォルダ 。フォルダの中身は無視。 ---
-**/TournamentFiles/*
-!**/TournamentFiles/
-!**/TournamentFiles/.gitkeep
-
-
-# --- 団体戦の選手名簿ファイルを出力するフォルダ。フォルダの中身は無視。 ---
-**/BookletFiles/*
-!**/BookletFiles/
-!**/BookletFiles/.gitkeep
