@@ -1,0 +1,34 @@
+
+# --- Python キャッシュ ---
+**/__pycache__/
+*.pyc
+
+
+# --- バックアップフォルダ ---
+**/bak/
+
+
+# --- データファイル ---
+*.tsv
+*.xlsx
+*.svg
+*.log
+
+
+# --- Google API の認証ファイル ---
+credentials_*.json
+
+
+# --- GoogleシートのTSVファイルをダウンロードするフォルダ。フォルダの中身は無視。 ---
+**/DownloadTSV/*
+!**/DownloadTSV/
+
+
+# --- トーナメント表のファイルを出力するフォルダ 。フォルダの中身は無視。 ---
+**/TournamentFiles/*
+!**/TournamentFiles/
+
+
+# --- 団体戦の選手名簿ファイルを出力するフォルダ。フォルダの中身は無視。 ---
+**/BookletFiles/*
+!**/BookletFiles/
