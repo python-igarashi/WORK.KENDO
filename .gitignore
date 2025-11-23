@@ -1,34 +1,34 @@
 
-# --- Python ƒLƒƒƒbƒVƒ… ---
+# --- Python ã‚­ãƒ£ãƒƒã‚·ãƒ¥ ---
 **/__pycache__/
 *.pyc
 
 
-# --- ƒoƒbƒNƒAƒbƒvƒtƒHƒ‹ƒ_ ---
+# --- ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—ãƒ•ã‚©ãƒ«ãƒ€ ---
 **/bak/
 
 
-# --- ƒf[ƒ^ƒtƒ@ƒCƒ‹ ---
+# --- ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ« ---
 *.tsv
 *.xlsx
 *.svg
 *.log
 
 
-# --- Google API ‚Ì”FØƒtƒ@ƒCƒ‹ ---
+# --- Google API ã®èªè¨¼ãƒ•ã‚¡ã‚¤ãƒ« ---
 credentials_*.json
 
 
-# --- GoogleƒV[ƒg‚ÌTSVƒtƒ@ƒCƒ‹‚ðƒ_ƒEƒ“ƒ[ƒh‚·‚éƒtƒHƒ‹ƒ_BƒtƒHƒ‹ƒ_‚Ì’†g‚Í–³Ž‹B ---
+# --- Googleã‚·ãƒ¼ãƒˆã®TSVãƒ•ã‚¡ã‚¤ãƒ«ã‚’ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ã€‚ãƒ•ã‚©ãƒ«ãƒ€ã®ä¸­èº«ã¯ç„¡è¦–ã€‚ ---
 **/DownloadTSV/*
 !**/DownloadTSV/
 
 
-# --- ƒg[ƒiƒƒ“ƒg•\‚Ìƒtƒ@ƒCƒ‹‚ðo—Í‚·‚éƒtƒHƒ‹ƒ_ BƒtƒHƒ‹ƒ_‚Ì’†g‚Í–³Ž‹B ---
+# --- ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆè¡¨ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‡ºåŠ›ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ ã€‚ãƒ•ã‚©ãƒ«ãƒ€ã®ä¸­èº«ã¯ç„¡è¦–ã€‚ ---
 **/TournamentFiles/*
 !**/TournamentFiles/
 
 
-# --- ’c‘Ìí‚Ì‘IŽè–¼•ëƒtƒ@ƒCƒ‹‚ðo—Í‚·‚éƒtƒHƒ‹ƒ_BƒtƒHƒ‹ƒ_‚Ì’†g‚Í–³Ž‹B ---
+# --- å›£ä½“æˆ¦ã®é¸æ‰‹åç°¿ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‡ºåŠ›ã™ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ã€‚ãƒ•ã‚©ãƒ«ãƒ€ã®ä¸­èº«ã¯ç„¡è¦–ã€‚ ---
 **/BookletFiles/*
 !**/BookletFiles/
