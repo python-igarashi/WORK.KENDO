@@ -1,4 +1,3 @@
-# coding: cp932
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import gspread
@@ -12,33 +11,33 @@ SCOPES = [
   ]
 
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰» ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ– ========= #
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 gc = gspread.authorize(creds)
 
-# ========= ‘S’c‘Ì‚ÌƒXƒvƒŒƒbƒhƒV[ƒg‚ÌA‘S‚Ä‚Ìƒ[ƒNƒV[ƒg‚ÌTSVƒtƒ@ƒCƒ‹‚ğƒ_ƒEƒ“ƒ[ƒh ========= #
-for groupname in Defines.l_groupname + ["ƒeƒ“ƒvƒŒ[ƒg", "‹L“ü—á"]:
-	print(f"{groupname} ˆ—’†...")
+# ========= å…¨å›£ä½“ã®ã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆã®ã€å…¨ã¦ã®ãƒ¯ãƒ¼ã‚¯ã‚·ãƒ¼ãƒˆã®TSVãƒ•ã‚¡ã‚¤ãƒ«ã‚’ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ ========= #
+for groupname in Defines.l_groupname + ["ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ", "è¨˜å…¥ä¾‹"]:
+	print(f"{groupname} å‡¦ç†ä¸­...")
 	
-	# ’c‘Ì‚ÌƒXƒvƒŒƒbƒhƒV[ƒgƒtƒ@ƒCƒ‹–¼‚ğæ“¾
+	# å›£ä½“ã®ã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—
 	filename_ss = Defines.filename_header + "." + groupname
 	
-	# w’èƒtƒHƒ‹ƒ_“à‚Åƒtƒ@ƒCƒ‹–¼‚ğŒŸõ
+	# æŒ‡å®šãƒ•ã‚©ãƒ«ãƒ€å†…ã§ãƒ•ã‚¡ã‚¤ãƒ«åã‚’æ¤œç´¢
 	query = f"'{Defines.drive_id}' in parents and name = '{filename_ss}' and trashed = false"
 	results = drive_service.files().list(q=query, fields="files(id)").execute()
 	files = results.get('files', [])
 	file_id = files[0]["id"]
 	
-	# ’c‘Ì‚ÌƒXƒvƒŒƒbƒhƒV[ƒg‚ğŠJ‚«A‘S‚Ä‚Ìƒ[ƒNƒV[ƒg‚ğ‘–¸
+	# å›£ä½“ã®ã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆã‚’é–‹ãã€å…¨ã¦ã®ãƒ¯ãƒ¼ã‚¯ã‚·ãƒ¼ãƒˆã‚’èµ°æŸ»
 	ss = gc.open_by_key(file_id)
 	for worksheet in ss.worksheets():
-		# ƒ[ƒNƒV[ƒg‚Ì“à—e‚ğæ“¾
+		# ãƒ¯ãƒ¼ã‚¯ã‚·ãƒ¼ãƒˆã®å†…å®¹ã‚’å–å¾—
 		gid = worksheet.id
 		url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=tsv&gid={gid}"
 		res = requests.get(url)
 		
-		# {ƒOƒ‹[ƒv–¼}_{ƒ[ƒNƒV[ƒg–¼}.tsv ‚Éo—Í
+		# {ã‚°ãƒ«ãƒ¼ãƒ—å}_{ãƒ¯ãƒ¼ã‚¯ã‚·ãƒ¼ãƒˆå}.tsv ã«å‡ºåŠ›
 		with open(f"{Defines.download_folder}\\{groupname}_{worksheet.title}.tsv", "wb") as f:
 			f.write(res.content)
 

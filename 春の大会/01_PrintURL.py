@@ -1,4 +1,3 @@
-# coding: cp932
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -9,14 +8,14 @@ SCOPES = [
   ]
 
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰» ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ– ========= #
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 
 for groupname in Defines.l_groupname:
 	filename = Defines.filename_header + "." + groupname
 
-	# w’èƒtƒHƒ‹ƒ_“à‚Å’c‘Ì‚Ìƒtƒ@ƒCƒ‹–¼‚ğŒŸõ
+	# æŒ‡å®šãƒ•ã‚©ãƒ«ãƒ€å†…ã§å›£ä½“ã®ãƒ•ã‚¡ã‚¤ãƒ«åã‚’æ¤œç´¢
 	query = f"'{Defines.drive_id}' in parents and name = '{filename}' and trashed = false"
 	results = drive_service.files().list(q=query, fields="files(id, name, webViewLink)").execute()
 	files = results.get('files', [])
@@ -25,4 +24,4 @@ for groupname in Defines.l_groupname:
 		file = files[0]
 		print(f"[{groupname}]\n{file['webViewLink']}\n")
 	else:
-		print(f"[{groupname}]\nŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½B\n")
+		print(f"[{groupname}]\nè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚\n")

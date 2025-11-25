@@ -1,4 +1,3 @@
-# coding: cp932
 import Defines
 import os
 from openpyxl import Workbook, load_workbook
@@ -6,9 +5,9 @@ from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
 
 
-# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-#  ‘å‰ïƒvƒƒOƒ‰ƒ€ûq‚Ì‘Ièˆê——ì¬—pƒNƒ‰ƒX
-# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+#  å¤§ä¼šãƒ—ãƒ­ã‚°ãƒ©ãƒ å†Šå­ã®é¸æ‰‹ä¸€è¦§ä½œæˆç”¨ã‚¯ãƒ©ã‚¹
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class booklet:
 	def __init__(self, player_num, summary_name):
 		self.player_num = player_num
@@ -16,60 +15,60 @@ class booklet:
 		self.team_index = -1
 		self.current_row = []
 		self.summary = []
-		self.teams_per_line = 3 # ˆê——‚Å‰¡‚É•À‚×‚éƒ`[ƒ€”
+		self.teams_per_line = 3 # ä¸€è¦§ã§æ¨ªã«ä¸¦ã¹ã‚‹ãƒãƒ¼ãƒ æ•°
 	
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-	#  ƒ`[ƒ€ƒf[ƒ^‚ğ’Ç‰Á‚·‚é
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+	#  ãƒãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ã‚’è¿½åŠ ã™ã‚‹
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	def append_team(self, team):
 		self.team_index += 1
 		
 		team_offset_Y = self.team_index // self.teams_per_line
 		team_offset_X = self.team_index % self.teams_per_line
 		
-		# 1ƒ`[ƒ€‚ ‚½‚è‚Ìs”—ñ”‚ğæ“¾
-		num_rows = 1 + 1 + (self.player_num * 2) # s” = 1[’c‘Ì] + 1[ŠÄ“Â] + ({‘Iè”} * 2[‘Iè‚Ó‚è‚ª‚È + ‘Iè–¼])
-		num_cols = 3 # ƒ|ƒWƒVƒ‡ƒ“ + –¼‘O + Šw”N|’iˆÊ
+		# 1ãƒãƒ¼ãƒ ã‚ãŸã‚Šã®è¡Œæ•°åˆ—æ•°ã‚’å–å¾—
+		num_rows = 1 + 1 + (self.player_num * 2) # è¡Œæ•° = 1[å›£ä½“] + 1[ç›£ç£] + ({é¸æ‰‹æ•°} * 2[é¸æ‰‹ãµã‚ŠãŒãª + é¸æ‰‹æ°å])
+		num_cols = 3 # ãƒã‚¸ã‚·ãƒ§ãƒ³ + åå‰ + å­¦å¹´|æ®µä½
 		
-		# 1ƒ`[ƒ€‚Ì“à—e•Û‘¶—ps—ñ‚ğ‰Šú‰»
-		contents = [[""] * num_cols for i in range(num_rows)] # Empty•¶š‚Ì2ŸŒ³”z—ñ‚ğì¬‚·‚é
+		# 1ãƒãƒ¼ãƒ ã®å†…å®¹ä¿å­˜ç”¨è¡Œåˆ—ã‚’åˆæœŸåŒ–
+		contents = [[""] * num_cols for i in range(num_rows)] # Emptyæ–‡å­—ã®2æ¬¡å…ƒé…åˆ—ã‚’ä½œæˆã™ã‚‹
 		
-		# ˆê——‚Ì¶’[‚Ìƒ`[ƒ€‚Ìê‡Asummary‚É‰¡‚É•À‚×‚éƒ`[ƒ€”•ª‚Ìs—ñ‚ğ’Ç‰Á‚·‚é
+		# ä¸€è¦§ã®å·¦ç«¯ã®ãƒãƒ¼ãƒ ã®å ´åˆã€summaryã«æ¨ªã«ä¸¦ã¹ã‚‹ãƒãƒ¼ãƒ æ•°åˆ†ã®è¡Œåˆ—ã‚’è¿½åŠ ã™ã‚‹
 		if team_offset_X == 0:
 			self.summary += [[""] * num_cols * self.teams_per_line for i in range(num_rows)]
 		
 		summary_offset_Y = team_offset_Y * num_rows
 		summary_offset_X = team_offset_X * num_cols
 		
-		# ’c‘Ìs
+		# å›£ä½“è¡Œ
 		row_cur = 0
-		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "’c‘Ì–¼"
+		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "å›£ä½“å"
 		self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = Defines.get_booklet_groupname(team[0][0], self.summary_name)
 		
-		# ŠÄ“Âs
+		# ç›£ç£è¡Œ
 		row_cur += 1
-		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "ŠÄ“Â"
+		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "ç›£ç£"
 		self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[1][2]
 		
-		# ‘Iès
+		# é¸æ‰‹è¡Œ
 		for i in range(self.player_num):
-			# ‚Ó‚è‚ª‚Ès
+			# ãµã‚ŠãŒãªè¡Œ
 			row_cur += 1
-			self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = team[2 + i][1] # ƒ|ƒWƒVƒ‡ƒ“(æ–N, ...)
-			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][3] # ‚Ó‚è‚ª‚È
-			if self.summary_name.find("ˆê”Ê") >= 0:
-				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][7] # ’iˆÊ
+			self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = team[2 + i][1] # ãƒã‚¸ã‚·ãƒ§ãƒ³(å…ˆé‹’, ...)
+			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][3] # ãµã‚ŠãŒãª
+			if self.summary_name.find("ä¸€èˆ¬") >= 0:
+				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][7] # æ®µä½
 			else:
-				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][5] + ("" if team[2 + i][5] == "" else "”N") # Šw”N ("" if self.summary_name.find("ˆê”Ê") >= 0 else "”N")  # Šw”N/’iˆÊ
+				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][5] + ("" if team[2 + i][5] == "" else "å¹´") # å­¦å¹´ ("" if self.summary_name.find("ä¸€èˆ¬") >= 0 else "å¹´")  # å­¦å¹´/æ®µä½
 			
-			# –¼s
+			# æ°åè¡Œ
 			row_cur += 1
-			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][2] # –¼(æ–N, ...)
+			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][2] # æ°å(å…ˆé‹’, ...)
 	
 	
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-	#  ‘S‚Ä‚Ìƒ`[ƒ€‚ğTSVŒ`®‚Åo—Í‚·‚é
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+	#  å…¨ã¦ã®ãƒãƒ¼ãƒ ã‚’TSVå½¢å¼ã§å‡ºåŠ›ã™ã‚‹
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	def output_tsv(self, path):
 		import csv
 		with open(path, mode="w", newline="", encoding="utf-8") as f:
@@ -77,102 +76,102 @@ class booklet:
 			writer.writerows(self.summary)
 	
 	
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-	#  ‘S‚Ä‚Ìƒ`[ƒ€‚ğEXCELŒ`®‚Åo—Í‚·‚é
-	# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+	#  å…¨ã¦ã®ãƒãƒ¼ãƒ ã‚’EXCELå½¢å¼ã§å‡ºåŠ›ã™ã‚‹
+	# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	def output_xlsx(self, path, init_workbook = False):
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-		#  Excel ‰Šú‰»
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		#  Excel åˆæœŸåŒ–
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		if init_workbook:
-			# Šù‘¶‚Ìƒtƒ@ƒCƒ‹‚ğíœ‚µAV‚µ‚¢ƒGƒNƒZƒ‹ƒtƒ@ƒCƒ‹‚ğì¬‚·‚é
+			# æ—¢å­˜ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‰Šé™¤ã—ã€æ–°ã—ã„ã‚¨ã‚¯ã‚»ãƒ«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã™ã‚‹
 			try:
 				os.remove(path)
-				print(f"[{path}] ‚ğíœ‚µ‚Ü‚µ‚½B")
+				print(f"[{path}] ã‚’å‰Šé™¤ã—ã¾ã—ãŸã€‚")
 			except FileNotFoundError:
 				pass
 			wb = Workbook()
 
-			# V‚µ‚¢ƒV[ƒg{self.summary_name}‚ğì¬‚µA‚»‚êˆÈŠO‚ÌƒfƒtƒHƒ‹ƒg‚ÌƒV[ƒg‚ğíœ‚·‚é
+			# æ–°ã—ã„ã‚·ãƒ¼ãƒˆ{self.summary_name}ã‚’ä½œæˆã—ã€ãã‚Œä»¥å¤–ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚·ãƒ¼ãƒˆã‚’å‰Šé™¤ã™ã‚‹
 			ws = wb.create_sheet(self.summary_name)
 			for sheet_name in wb.sheetnames:
 				if sheet_name != self.summary_name:
 					wb.remove(wb[sheet_name])
 			wb.save(path)
-			print(f"[{path}] ‚ğì¬‚µ‚Ü‚µ‚½B")
+			print(f"[{path}] ã‚’ä½œæˆã—ã¾ã—ãŸã€‚")
 
 		else:
-			# Šù‘¶‚ÌƒGƒNƒZƒ‹ƒtƒ@ƒCƒ‹‚ğŠJ‚­
+			# æ—¢å­˜ã®ã‚¨ã‚¯ã‚»ãƒ«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
 			wb = load_workbook(path)
 
-			# Šù‘¶‚ÌƒV[ƒg{self.summary_name}‚ğíœ‚µAV‚µ‚¢ƒV[ƒg{self.summary_name}‚ğì¬‚·‚é
+			# æ—¢å­˜ã®ã‚·ãƒ¼ãƒˆ{self.summary_name}ã‚’å‰Šé™¤ã—ã€æ–°ã—ã„ã‚·ãƒ¼ãƒˆ{self.summary_name}ã‚’ä½œæˆã™ã‚‹
 			if self.summary_name in  wb.sheetnames:
 				wb.remove(wb[self.summary_name])
 			ws = wb.create_sheet(self.summary_name)
 			wb.save(path)
 
-		mergin = 1 # 1s–ÚA1—ñ–Ú‚Í‚»‚ê‚¼‚êƒ}[ƒWƒ“ƒGƒŠƒA‚Æ‚µAEXCEL‚ÌƒZƒ‹”Ô†w’è‚É‚±‚Ì’l‚ğ’²®‚·‚é
+		mergin = 1 # 1è¡Œç›®ã€1åˆ—ç›®ã¯ãã‚Œãã‚Œãƒãƒ¼ã‚¸ãƒ³ã‚¨ãƒªã‚¢ã¨ã—ã€EXCELã®ã‚»ãƒ«ç•ªå·æŒ‡å®šæ™‚ã«ã“ã®å€¤ã‚’èª¿æ•´ã™ã‚‹
 
 		ws.title = self.summary_name
 		for team_idx in range(self.teams_per_line):
-			ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width * 0.7 # ƒ|ƒWƒVƒ‡ƒ“ ‚Ì—ñ•
-			ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width * 2   # ‘Iè–¼Ì ‚Ì—ñ•
-			ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width * 0.5 # Šw”N ‚Ì—ñ•
+			ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width * 0.7 # ãƒã‚¸ã‚·ãƒ§ãƒ³ ã®åˆ—å¹…
+			ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width * 2   # é¸æ‰‹åç§° ã®åˆ—å¹…
+			ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width * 0.5 # å­¦å¹´ ã®åˆ—å¹…
 
-		thin = Side(style="thin")    # ×ü
-		thick = Side(style="double") # ‘¾ü
+		thin = Side(style="thin")    # ç´°ç·š
+		thick = Side(style="double") # å¤ªç·š
 		
 		
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-		#  ƒ`[ƒ€î•ñ
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		#  ãƒãƒ¼ãƒ æƒ…å ±
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		for row, rowdata in enumerate(self.summary, start=1):
 			for col, value in enumerate(rowdata, start=1):
 				ws.cell(row=row + mergin, column=col + mergin, value=value)
 		
 		
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-		#  ƒ|ƒWƒVƒ‡ƒ“/Šw”N/’iˆÊ ‚ÌƒZƒ‹Œ‹‡
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		#  ãƒã‚¸ã‚·ãƒ§ãƒ³/å­¦å¹´/æ®µä½ ã®ã‚»ãƒ«çµåˆ
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		for row, rowdata in enumerate(self.summary, start=1):
 			for col, value in enumerate(rowdata, start=1):
-				# ’c‘Ì–¼‚ğ‘¾š‚É‚·‚é
-				#if col % 3 == 1 and value != "" and value == "’c‘Ì–¼":
+				# å›£ä½“åã‚’å¤ªå­—ã«ã™ã‚‹
+				#if col % 3 == 1 and value != "" and value == "å›£ä½“å":
 				#	ws.cell(row + mergin, col + 1 + mergin).font = Font(bold=True)
 				
-				# ƒ|ƒWƒVƒ‡ƒ“
-				if col % 3 == 1 and value != "" and value != "’c‘Ì–¼" and value != "ŠÄ“Â":
+				# ãƒã‚¸ã‚·ãƒ§ãƒ³
+				if col % 3 == 1 and value != "" and value != "å›£ä½“å" and value != "ç›£ç£":
 					ws.merge_cells(start_row=row + mergin, start_column=col + mergin, end_row=row+1 + mergin, end_column=col + mergin)
 					ws.cell(row + mergin, col + mergin).alignment = Alignment(horizontal="right", vertical="center")
 				
-				# Šw”N/’iˆÊ
+				# å­¦å¹´/æ®µä½
 				if col % 3 == 0 and value != "":
 					ws.merge_cells(start_row=row + mergin, start_column=col + mergin, end_row=row+1 + mergin, end_column=col + mergin)
 					ws.cell(row + mergin, col + mergin).alignment = Alignment(horizontal="left", vertical="center")
 		
 		
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
-		#  ƒ`[ƒ€‚ÌüˆÍ‚É‘¾üA‚»‚êˆÈŠO‚É×ü
-		# „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		#  ãƒãƒ¼ãƒ ã®å‘¨å›²ã«å¤ªç·šã€ãã‚Œä»¥å¤–ã«ç´°ç·š
+		# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		for row, rowdata in enumerate(self.summary, start=1):
 			for team_idx in range(self.teams_per_line):
-				if rowdata[team_idx * 3] == "’c‘Ì–¼":
-					row_bottom = row + (self.player_num * 2) + 1 # ƒ`[ƒ€‚ÌÅIs
-					col = (team_idx * 3) + 1 # ƒ`[ƒ€‚ÌÅ¶—ñ
-					col_right = col + 2      # ƒ`[ƒ€‚ÌÅ‰E—ñ
+				if rowdata[team_idx * 3] == "å›£ä½“å":
+					row_bottom = row + (self.player_num * 2) + 1 # ãƒãƒ¼ãƒ ã®æœ€çµ‚è¡Œ
+					col = (team_idx * 3) + 1 # ãƒãƒ¼ãƒ ã®æœ€å·¦åˆ—
+					col_right = col + 2      # ãƒãƒ¼ãƒ ã®æœ€å³åˆ—
 					
-					# ’c‘Ì–¼‚Ìsiƒ`[ƒ€‚Ìˆê”Ôãj
+					# å›£ä½“åã®è¡Œï¼ˆãƒãƒ¼ãƒ ã®ä¸€ç•ªä¸Šï¼‰
 					ws.cell(row + mergin, col + mergin).border = Border(top=thick, bottom=thin, left=thick, right=thin)
 					ws.cell(row + mergin, col + 1 + mergin).border = Border(top=thick, bottom=thin, left=thin)
 					ws.cell(row + mergin, col + 2 + mergin).border = Border(top=thick, bottom=thin, right=thick)
 					
-					# ŠÄ“Â‚Ìs
+					# ç›£ç£ã®è¡Œ
 					ws.cell(row + 1 + mergin, col + mergin).alignment = Alignment(horizontal="right")
 					ws.cell(row + 1 + mergin, col + mergin).border = Border(top=thin, bottom=thin, left=thick, right=thin)
 					ws.cell(row + 1 + mergin, col + 1 + mergin).border = Border(top=thin, bottom=thin, left=thin)
 					ws.cell(row + 1 + mergin, col + 2 + mergin).border = Border(top=thin, bottom=thin, right=thick)
 					
-					# ‘Iè–ˆ
+					# é¸æ‰‹æ¯
 					for row2 in range(row + 2, row_bottom + 1, 2):
 						ws.cell(row2 + mergin, col + mergin).border = Border(top=thin, left=thick, right=thin)
 						ws.cell(row2 + mergin, col + 1 + mergin).border = Border(top=thin, left=thin, right=thin)
@@ -182,11 +181,11 @@ class booklet:
 						ws.cell(row2 + 1 + mergin, col + 1 + mergin).border = Border(bottom=thin, left=thin, right=thin)
 						ws.cell(row2 + 1 + mergin, col + 2 + mergin).border = Border(bottom=thin, left=thin, right=thick)
 					
-					# ƒ`[ƒ€‚Ìˆê”Ô‰º
+					# ãƒãƒ¼ãƒ ã®ä¸€ç•ªä¸‹
 					ws.cell(row_bottom + mergin, col + mergin).border = Border(bottom=thick, left=thick, right=thin)
 					ws.cell(row_bottom + mergin, col + 1 + mergin).border = Border(bottom=thick, left=thin, right=thin)
 					ws.cell(row_bottom + mergin, col + 2 + mergin).border = Border(bottom=thick, left=thin, right=thick)
 		
 		
-		# ƒtƒ@ƒCƒ‹‚ğ•Û‘¶‚·‚é
+		# ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä¿å­˜ã™ã‚‹
 		wb.save(path)

@@ -1,46 +1,45 @@
-# coding: cp932
 import Defines
 import Tournament
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚Äƒg[ƒiƒƒ“ƒgì¬‚ğs‚¤ƒƒ\ƒbƒh ========= #
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆä½œæˆã‚’è¡Œã†ãƒ¡ã‚½ãƒƒãƒ‰ ========= #
 def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_date="", match_place1="", match_place2="", hide_groupname=False, init_workbook=False):
-	print(f"----- {summary_name}: ƒg[ƒiƒƒ“ƒgì¬ŠJn -----")
-	summary = [] # ‚±‚±‚ÉWŒvƒf[ƒ^‚ğì¬‚·‚é
+	print(f"----- {summary_name}: ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆä½œæˆé–‹å§‹ -----")
+	summary = [] # ã“ã“ã«é›†è¨ˆãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆã™ã‚‹
 	
-	indexof_groupname = 2 # ’c‘Ì–¼‚Ì—ñƒCƒ“ƒfƒbƒNƒXi"‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚éj
-	col_length = 10 # ƒTƒ}ƒŠ‚Ì—ñ”
+	indexof_groupname = 2 # å›£ä½“åã®åˆ—ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼ˆ"ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹ï¼‰
+	col_length = 10 # ã‚µãƒãƒªã®åˆ—æ•°
 	
 	
-	# ========= Še’c‘Ìƒtƒ@ƒCƒ‹‚©‚çƒf[ƒ^‚ğWŒv ========= #
-	#for groupname in ["‹L“ü—á"]: # ƒeƒXƒg—p
+	# ========= å„å›£ä½“ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’é›†è¨ˆ ========= #
+	#for groupname in ["è¨˜å…¥ä¾‹"]: # ãƒ†ã‚¹ãƒˆç”¨
 	for groupname in Defines.l_groupname:
-		#print(f"{groupname}: ˆ—’†...")
+		#print(f"{groupname}: å‡¦ç†ä¸­...")
 		
-		# {’c‘Ì–¼}_{WŒv‘ÎÛ}.tsv ‚Ìƒf[ƒ^‚ğæ“¾
+		# {å›£ä½“å}_{é›†è¨ˆå¯¾è±¡}.tsv ã®ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 		tsv_filename = f"{Defines.download_folder}\\{groupname}_{summary_name}.tsv"
 		l_row = Defines.tsv_get_all_values(tsv_filename)
 		
 		start_summary = False
 		for row in l_row:
-			if row[1] == "–¼": # ƒwƒbƒ_s‚ªŒ©‚Â‚©‚Á‚½‚Æ‚±‚ë‚ÅWŒvŠJn
+			if row[1] == "æ°å": # ãƒ˜ãƒƒãƒ€è¡ŒãŒè¦‹ã¤ã‹ã£ãŸã¨ã“ã‚ã§é›†è¨ˆé–‹å§‹
 				start_summary = True
 				continue
 			
-			if row[1] == None or row[1] == "": # –¼‚Ì‹L“ü‚ª–³‚¢ê‡‚Ícontinue
+			if row[1] == None or row[1] == "": # æ°åã®è¨˜å…¥ãŒç„¡ã„å ´åˆã¯continue
 				continue
 			
-			if start_summary != True: # WŒvŠJn‘O‚Ícontinue
+			if start_summary != True: # é›†è¨ˆé–‹å§‹å‰ã¯continue
 				continue
 			
-			# "‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚é
-			value = row[1: col_length] # “Á’è‚Ì—ñ‚Ü‚ÅØ‚èæ‚é
-			value.insert(indexof_groupname, groupname) # "‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚é
-			summary.append(Defines.pad_list(value, col_length)) # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
+			# "ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹
+			value = row[1: col_length] # ç‰¹å®šã®åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
+			value.insert(indexof_groupname, groupname) # "ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹
+			summary.append(Defines.pad_list(value, col_length)) # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
 	
 	
-	# ========= ƒg[ƒiƒƒ“ƒg‚ğì¬ ========= #
-	#print(f"{summary_name}: o—Í’†...")
+	# ========= ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã‚’ä½œæˆ ========= #
+	#print(f"{summary_name}: å‡ºåŠ›ä¸­...")
 	l_participant = []
 	for value in summary:
 		#groupname = Defines.get_booklet_groupname(value[2], summary_name)
@@ -50,42 +49,42 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 	rounds = Tournament.build_full_bracket(l_participant, seed=seed)
 	
 	
-	# ========= ƒg[ƒiƒƒ“ƒg‚ÌƒRƒ“ƒ\[ƒ‹o—Í ========= #
+	# ========= ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã®ã‚³ãƒ³ã‚½ãƒ¼ãƒ«å‡ºåŠ› ========= #
 	Tournament.print_bracket(rounds)
 	
 	
-	# ========= ƒg[ƒiƒƒ“ƒg‚ÌSVGƒtƒ@ƒCƒ‹‚ğo—Í ========= #
+	# ========= ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã®SVGãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‡ºåŠ› ========= #
 	#Tournament.save_bracket_svg(
 	#    rounds, f"{Defines.tournament_folder}\\{summary_name}.svg",
 	#    match_name=summary_name, match_date=match_date, match_place1=match_place1, match_place2=match_place2, print_match_no=print_match_no)
 	
 	
-	# ========= ƒg[ƒiƒƒ“ƒg‚ÌEXCELƒtƒ@ƒCƒ‹‚ğo—Í ========= #
+	# ========= ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã®EXCELãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‡ºåŠ› ========= #
 	Tournament.save_bracket_xlsx(
-	    rounds, path = f"{Defines.tournament_folder}\\Tournament_H.xlsx", summary_name = summary_name,
+	    rounds, path = f"{Defines.tournament_folder}\\Tournament_ç§‹.xlsx", summary_name = summary_name,
 	    match_name = match_name if match_name != None else summary_name, match_date = match_date, match_place1 = match_place1, match_place2 = match_place2,
 	    hide_groupname = hide_groupname, init_workbook = init_workbook)
 	
 	
-	print(f"{summary_name}: WŒv‚ğI—¹‚µ‚Ü‚µ‚½B")
+	print(f"{summary_name}: é›†è¨ˆã‚’çµ‚äº†ã—ã¾ã—ãŸã€‚")
 	print("")
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚Äƒg[ƒiƒƒ“ƒgì¬‚ğs‚¤ ========= #
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆä½œæˆã‚’è¡Œã† ========= #
 # seed:
-#   ‚±‚Ì’l‚É‚æ‚Á‚Äì¬‚³‚ê‚éƒg[ƒiƒƒ“ƒg‚ªŒˆ’è‚³‚ê‚é‚Ì‚ÅAseed‚Ì’l‚ğ•ÏX‚µ‚È‚¢‚±‚Æ‚ÅASVGƒtƒ@ƒCƒ‹‚¾‚¯‚ğ”÷’²®‚·‚é‚±‚Æ‚ª‰Â”\B
-#   –ˆ‰ñƒ‰ƒ“ƒ_ƒ€‚Éì¬‚µ‚½‚¢ê‡‚Íseed=None‚Æ‚·‚éB
+#   ã“ã®å€¤ã«ã‚ˆã£ã¦ä½œæˆã•ã‚Œã‚‹ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆãŒæ±ºå®šã•ã‚Œã‚‹ã®ã§ã€seedã®å€¤ã‚’å¤‰æ›´ã—ãªã„ã“ã¨ã§ã€SVGãƒ•ã‚¡ã‚¤ãƒ«ã ã‘ã‚’å¾®èª¿æ•´ã™ã‚‹ã“ã¨ãŒå¯èƒ½ã€‚
+#   æ¯å›ãƒ©ãƒ³ãƒ€ãƒ ã«ä½œæˆã—ãŸã„å ´åˆã¯seed=Noneã¨ã™ã‚‹ã€‚
 
 match_date = "2025.10.26"
 seed = 20251026 * 10 + 1
 
-Create("¬Šw1¥2”N¶‚Ì•”",                                        seed=seed, match_date=match_date, match_place1="‘æˆê‡ê", init_workbook=True)
-Create("¬Šw3¥4”N¶‚Ì•”",                                        seed=seed, match_date=match_date, match_place1="‘æˆê‡ê")
-Create("¬Šw5¥6”N¶‚Ì•”",                                        seed=seed, match_date=match_date, match_place1="‘æ“ñ‡ê")
-Create("’†Šw¶—q‚Ì•”",                                         seed=seed, match_date=match_date, match_place1="‘æ“ñ‡ê")
-Create("’†Šw1”N¶’jq‚Ì•”",                                      seed=seed, match_date=match_date, match_place1="‘æO‡ê")
-Create("’†Šw2¥3”N¶’jq‚Ì•”",                                    seed=seed, match_date=match_date, match_place1="‘æO‡ê")
-Create("ˆê”Ê—q5’iˆÈ‰º‚Ì•”", match_name="ˆê”Ê—qŒÜ’iˆÈ‰º‚Ì•”", seed=seed, match_date=match_date, match_place1="‘æˆê‡ê(‘Iè”Ô†1`4)",  match_place2="‘æ“ñ‡ê(‘Iè”Ô†5`9)")
-Create("ˆê”Ê’jq3’iˆÈ‰º‚Ì•”", match_name="ˆê”Ê’jqO’iˆÈ‰º‚Ì•”", seed=seed, match_date=match_date, match_place1="‘æˆê‡ê(‘Iè”Ô†1`16)", match_place2="‘æ“ñ‡ê(‘Iè”Ô†17`32)")
-Create("ˆê”Ê’jq4¥5’i‚Ì•”",   match_name="ˆê”Ê’jql¥ŒÜ’i‚Ì•”",  seed=seed, match_date=match_date, match_place1="‘æO‡ê")
-Create("ˆê”Ê6¥7’i‚Ì•”",       match_name="ˆê”Ê˜Z¥µ’i‚Ì•”",      seed=seed, match_date=match_date, match_place1="‘æˆê‡ê(‘Iè”Ô†1`7)",  match_place2="‘æ“ñ‡ê(‘Iè”Ô†8`14)")
+Create("å°å­¦1ï½¥2å¹´ç”Ÿã®éƒ¨",                                        seed=seed, match_date=match_date, match_place1="ç¬¬ä¸€è©¦åˆå ´", init_workbook=True)
+Create("å°å­¦3ï½¥4å¹´ç”Ÿã®éƒ¨",                                        seed=seed, match_date=match_date, match_place1="ç¬¬ä¸€è©¦åˆå ´")
+Create("å°å­¦5ï½¥6å¹´ç”Ÿã®éƒ¨",                                        seed=seed, match_date=match_date, match_place1="ç¬¬äºŒè©¦åˆå ´")
+Create("ä¸­å­¦ç”Ÿå¥³å­ã®éƒ¨",                                         seed=seed, match_date=match_date, match_place1="ç¬¬äºŒè©¦åˆå ´")
+Create("ä¸­å­¦1å¹´ç”Ÿç”·å­ã®éƒ¨",                                      seed=seed, match_date=match_date, match_place1="ç¬¬ä¸‰è©¦åˆå ´")
+Create("ä¸­å­¦2ï½¥3å¹´ç”Ÿç”·å­ã®éƒ¨",                                    seed=seed, match_date=match_date, match_place1="ç¬¬ä¸‰è©¦åˆå ´")
+Create("ä¸€èˆ¬å¥³å­5æ®µä»¥ä¸‹ã®éƒ¨", match_name="ä¸€èˆ¬å¥³å­äº”æ®µä»¥ä¸‹ã®éƒ¨", seed=seed, match_date=match_date, match_place1="ç¬¬ä¸€è©¦åˆå ´(é¸æ‰‹ç•ªå·1ï½4)",  match_place2="ç¬¬äºŒè©¦åˆå ´(é¸æ‰‹ç•ªå·5ï½9)")
+Create("ä¸€èˆ¬ç”·å­3æ®µä»¥ä¸‹ã®éƒ¨", match_name="ä¸€èˆ¬ç”·å­ä¸‰æ®µä»¥ä¸‹ã®éƒ¨", seed=seed, match_date=match_date, match_place1="ç¬¬ä¸€è©¦åˆå ´(é¸æ‰‹ç•ªå·1ï½16)", match_place2="ç¬¬äºŒè©¦åˆå ´(é¸æ‰‹ç•ªå·17ï½32)")
+Create("ä¸€èˆ¬ç”·å­4ï½¥5æ®µã®éƒ¨",   match_name="ä¸€èˆ¬ç”·å­å››ï½¥äº”æ®µã®éƒ¨",  seed=seed, match_date=match_date, match_place1="ç¬¬ä¸‰è©¦åˆå ´")
+Create("ä¸€èˆ¬6ï½¥7æ®µã®éƒ¨",       match_name="ä¸€èˆ¬å…­ï½¥ä¸ƒæ®µã®éƒ¨",      seed=seed, match_date=match_date, match_place1="ç¬¬ä¸€è©¦åˆå ´(é¸æ‰‹ç•ªå·1ï½7)",  match_place2="ç¬¬äºŒè©¦åˆå ´(é¸æ‰‹ç•ªå·8ï½14)")

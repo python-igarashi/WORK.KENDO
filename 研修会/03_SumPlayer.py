@@ -1,4 +1,3 @@
-# coding: cp932
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import gspread
@@ -12,77 +11,77 @@ SCOPES = [
  ]
 
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰» ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ– ========= #
 global creds, drive_service, gc
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 gc = gspread.authorize(creds)
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚ÄWŒv‚ğs‚¤ƒƒ\ƒbƒh ========= #
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦é›†è¨ˆã‚’è¡Œã†ãƒ¡ã‚½ãƒƒãƒ‰ ========= #
 def Summary(summary_name):
-	print(f"----- {summary_name}: WŒvŠJn -----")
-	summary = [] # ‚±‚±‚ÉWŒvƒf[ƒ^‚ğì¬‚·‚é
+	print(f"----- {summary_name}: é›†è¨ˆé–‹å§‹ -----")
+	summary = [] # ã“ã“ã«é›†è¨ˆãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆã™ã‚‹
 	
-	indexof_groupname = 2 # ’c‘Ì–¼‚Ì—ñƒCƒ“ƒfƒbƒNƒXi"‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚éj
-	col_length = 15 # ƒTƒ}ƒŠ‚Ì—ñ”
+	indexof_groupname = 2 # å›£ä½“åã®åˆ—ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼ˆ"ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹ï¼‰
+	col_length = 15 # ã‚µãƒãƒªã®åˆ—æ•°
 	
 	
-	# ========= ƒeƒ“ƒvƒŒ[ƒg‚©‚çƒwƒbƒ_‚ğæ“¾ ========= #
-	# ƒeƒ“ƒvƒŒ[ƒg_R”»ŒWˆõ.tsv ‚Ìƒf[ƒ^‚ğæ“¾
-	tsv_filename = f"{Defines.download_folder}\\ƒeƒ“ƒvƒŒ[ƒg_{summary_name}.tsv"
+	# ========= ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‹ã‚‰ãƒ˜ãƒƒãƒ€ã‚’å–å¾— ========= #
+	# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ_å¯©åˆ¤ä¿‚å“¡.tsv ã®ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
+	tsv_filename = f"{Defines.download_folder}\\ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ_{summary_name}.tsv"
 	l_row = Defines.tsv_get_all_values(tsv_filename)
 	for row in l_row:
-		if row[1] == "–¼":
-			header = row[1 : col_length] # “Á’è‚Ì—ñ‚Ü‚ÅØ‚èæ‚é
-			header.insert(indexof_groupname, "’c‘Ì–¼") # "‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚é
-			summary.append(Defines.pad_list(header, col_length)) # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
+		if row[1] == "æ°å":
+			header = row[1 : col_length] # ç‰¹å®šã®åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
+			header.insert(indexof_groupname, "å›£ä½“å") # "ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹
+			summary.append(Defines.pad_list(header, col_length)) # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
 			break
 	
 	
-	# ========= Še’c‘Ìƒtƒ@ƒCƒ‹‚©‚çƒf[ƒ^‚ğWŒv ========= #
-	#for groupname in ["‹L“ü—á"]: # ƒeƒXƒg—p
+	# ========= å„å›£ä½“ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’é›†è¨ˆ ========= #
+	#for groupname in ["è¨˜å…¥ä¾‹"]: # ãƒ†ã‚¹ãƒˆç”¨
 	for groupname in Defines.l_groupname:
-		print(f"{groupname}: ˆ—’†...")
+		print(f"{groupname}: å‡¦ç†ä¸­...")
 		
-		# {’c‘Ì–¼}_{WŒv‘ÎÛ}.tsv ‚Ìƒf[ƒ^‚ğæ“¾
+		# {å›£ä½“å}_{é›†è¨ˆå¯¾è±¡}.tsv ã®ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 		tsv_filename = f"{Defines.download_folder}\\{groupname}_{summary_name}.tsv"
 		l_row = Defines.tsv_get_all_values(tsv_filename)
 		
 		start_summary = False
 		for row in l_row:
-			if row[1] == "–¼": # ƒwƒbƒ_s‚ªŒ©‚Â‚©‚Á‚½‚Æ‚±‚ë‚ÅWŒvŠJn
+			if row[1] == "æ°å": # ãƒ˜ãƒƒãƒ€è¡ŒãŒè¦‹ã¤ã‹ã£ãŸã¨ã“ã‚ã§é›†è¨ˆé–‹å§‹
 				start_summary = True
 				continue
 			
-			if row[1] == None or row[1] == "": # –¼‚Ì‹L“ü‚ª–³‚¢ê‡‚Ícontinue
+			if row[1] == None or row[1] == "": # æ°åã®è¨˜å…¥ãŒç„¡ã„å ´åˆã¯continue
 				continue
 			
-			if start_summary != True: # WŒvŠJn‘O‚Ícontinue
+			if start_summary != True: # é›†è¨ˆé–‹å§‹å‰ã¯continue
 				continue
 			
-			# "‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚é
-			value = row[1: col_length] # “Á’è‚Ì—ñ‚Ü‚ÅØ‚èæ‚é
-			value.insert(indexof_groupname, groupname) # "‚Ó‚è‚ª‚È" ‚ÌŒã‚ë‚É "’c‘Ì–¼" ‚ğ‘}“ü‚·‚é
-			summary.append(Defines.pad_list(value, col_length)) # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
+			# "ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹
+			value = row[1: col_length] # ç‰¹å®šã®åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
+			value.insert(indexof_groupname, groupname) # "ãµã‚ŠãŒãª" ã®å¾Œã‚ã« "å›£ä½“å" ã‚’æŒ¿å…¥ã™ã‚‹
+			summary.append(Defines.pad_list(value, col_length)) # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
 	
 	
-	# ========= WŒvƒXƒvƒŒƒbƒhƒV[ƒg‚Öo—Í ========= #
-	print(f"{summary_name}: o—Í’†...")
+	# ========= é›†è¨ˆã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆã¸å‡ºåŠ› ========= #
+	print(f"{summary_name}: å‡ºåŠ›ä¸­...")
 	sheet_dst = gc.open_by_url(Defines.url_summary).worksheet(summary_name)
 	sheet_dst.clear()
 	sheet_dst.update(range_name = f"B1:P{len(summary)}", values = summary)
 	
 	
-	# ========= ƒeƒXƒg ========= #
+	# ========= ãƒ†ã‚¹ãƒˆ ========= #
 	#print("----- " + summary_name + " -----")
 	#for row in summary:
 	#	print(row)
 	
-	print(f"{summary_name}: WŒv‚ğI—¹‚µ‚Ü‚µ‚½B")
+	print(f"{summary_name}: é›†è¨ˆã‚’çµ‚äº†ã—ã¾ã—ãŸã€‚")
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚ÄWŒv‚ğs‚¤ ========= #
-Summary("ˆê”Ê")
-Summary("¬Šw¶")
-Summary("’†Šw¶")
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦é›†è¨ˆã‚’è¡Œã† ========= #
+Summary("ä¸€èˆ¬")
+Summary("å°å­¦ç”Ÿ")
+Summary("ä¸­å­¦ç”Ÿ")

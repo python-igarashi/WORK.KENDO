@@ -1,4 +1,3 @@
-# coding: cp932
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import gspread
@@ -12,42 +11,42 @@ SCOPES = [
  ]
 
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰»iGoogleCloudƒAƒJƒEƒ“ƒg‚ªƒI[ƒi[‚Æ‚È‚éƒtƒ@ƒCƒ‹‚ğì¬BƒXƒgƒŒ[ƒW§ŒÀ[0byte]‚Ì‚½‚ßƒGƒ‰[‚Æ‚È‚éBj ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ–ï¼ˆGoogleCloudã‚¢ã‚«ã‚¦ãƒ³ãƒˆãŒã‚ªãƒ¼ãƒŠãƒ¼ã¨ãªã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã€‚ã‚¹ãƒˆãƒ¬ãƒ¼ã‚¸åˆ¶é™[0byte]ã®ãŸã‚ã‚¨ãƒ©ãƒ¼ã¨ãªã‚‹ã€‚ï¼‰ ========= #
 #creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 #drive_service = build('drive', 'v3', credentials=creds)
 #gc = gspread.authorize(creds)
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰»iŒÂlƒAƒJƒEƒ“ƒg[chofuchuou@gmail.com] ‚ªƒI[ƒi[‚Æ‚È‚éƒtƒ@ƒCƒ‹‚ğì¬BOAuth‚Æ‚¢‚¤“Áê‚È‹@”\‚ğg‚¤Bj ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ–ï¼ˆå€‹äººã‚¢ã‚«ã‚¦ãƒ³ãƒˆ[chofuchuou@gmail.com] ãŒã‚ªãƒ¼ãƒŠãƒ¼ã¨ãªã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã€‚OAuthã¨ã„ã†ç‰¹æ®Šãªæ©Ÿèƒ½ã‚’ä½¿ã†ã€‚ï¼‰ ========= #
 from google_auth_oauthlib.flow import InstalledAppFlow
 flow = InstalledAppFlow.from_client_secrets_file(Defines.clients_secrets_file, scopes=SCOPES)
 creds = flow.run_local_server(port=0)
 drive_service = build('drive', 'v3', credentials=creds)
 gc = gspread.authorize(creds)
 
-# ========= ƒeƒ“ƒvƒŒ[ƒgƒtƒ@ƒCƒ‹î•ñæ“¾ ========= #
+# ========= ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆãƒ•ã‚¡ã‚¤ãƒ«æƒ…å ±å–å¾— ========= #
 template_ss = gc.open_by_url(Defines.url_template)
 sheet_header = f"{Defines.sheet_header}.{datetime.datetime.now().year}.{datetime.datetime.now().month}"
 
-# ========= Še’c‘Ìƒtƒ@ƒCƒ‹ì¬ˆ— ========= #
+# ========= å„å›£ä½“ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆå‡¦ç† ========= #
 for groupname in Defines.l_groupname:
-	print(f"{groupname}: ˆ—’†...")
+	print(f"{groupname}: å‡¦ç†ä¸­...")
 	
-	# ƒRƒs[æƒtƒ@ƒCƒ‹–¼¶¬
+	# ã‚³ãƒ”ãƒ¼å…ˆãƒ•ã‚¡ã‚¤ãƒ«åç”Ÿæˆ
 	filename_dst = Defines.filename_header + "." + groupname
 	
-	# “¯–¼ƒtƒ@ƒCƒ‹‚ª‚ ‚ê‚Îíœ
+	# åŒåãƒ•ã‚¡ã‚¤ãƒ«ãŒã‚ã‚Œã°å‰Šé™¤
 	query = f"'{Defines.drive_id}' in parents and name = '{filename_dst}' and trashed = false"
 	results = drive_service.files().list(q=query, fields="files(id)").execute()
 	for file_old in results.get('files', []):
 		drive_service.files().update(fileId=file_old['id'], body={'trashed': True}).execute()
 	
-	# ƒeƒ“ƒvƒŒ[ƒg‚ÌƒRƒs[‚ğì¬
+	# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã®ã‚³ãƒ”ãƒ¼ã‚’ä½œæˆ
 	file_dst = drive_service.files().copy(
 		fileId = template_ss.id,
 		body = {'name': filename_dst, 'parents': [Defines.drive_id]}
 		).execute()
 	
-	# ƒRƒs[‚³‚ê‚½ƒXƒvƒŒƒbƒhƒV[ƒg‚ğŠJ‚«A‘SƒV[ƒg‚ÌB4ƒZƒ‹‚É’c‘Ì–¼‚ğİ’èAA1ƒZƒ‹‚É‘å‰ï–¼‚ğİ’è
+	# ã‚³ãƒ”ãƒ¼ã•ã‚ŒãŸã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆã‚’é–‹ãã€å…¨ã‚·ãƒ¼ãƒˆã®B4ã‚»ãƒ«ã«å›£ä½“åã‚’è¨­å®šã€A1ã‚»ãƒ«ã«å¤§ä¼šåã‚’è¨­å®š
 	groupname_ss = gc.open_by_key(file_dst['id'])
 	sheet = groupname_ss.worksheets()[0]
 	sheet.update(range_name="B4", values=[[groupname]])

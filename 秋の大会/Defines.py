@@ -1,104 +1,103 @@
-# coding: cp932
 service_account_file = "credentials_driveaccess.json"
 clients_secrets_file = "credentials_GoogleAuthKendoApp.json"
 
-# Googleƒhƒ‰ƒCƒu‚Ì‹¤—LURL‚©‚ç“]Ú‚·‚é
-drive_id = "12jbd11itYcVmICCJYiFxiXz10oHyANqt" # ƒhƒ‰ƒCƒu
-#drive_id = "1yYZ2HfFYQyozop20_BfcH30w0j8OrxbL" # ƒhƒ‰ƒCƒu 2024.10.13‚Ì‘å‰ï‚ÌƒoƒbƒNƒAƒbƒv - ƒeƒXƒg—p
+# Googleãƒ‰ãƒ©ã‚¤ãƒ–ã®å…±æœ‰URLã‹ã‚‰è»¢è¼‰ã™ã‚‹
+drive_id = "12jbd11itYcVmICCJYiFxiXz10oHyANqt" # ãƒ‰ãƒ©ã‚¤ãƒ–
+#drive_id = "1yYZ2HfFYQyozop20_BfcH30w0j8OrxbL" # ãƒ‰ãƒ©ã‚¤ãƒ– 2024.10.13ã®å¤§ä¼šã®ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ— - ãƒ†ã‚¹ãƒˆç”¨
 
-# ƒeƒ“ƒvƒŒ[ƒgƒtƒ@ƒCƒ‹AWŒvƒtƒ@ƒCƒ‹
-url_template = "https://docs.google.com/spreadsheets/d/1DTvAV4FUbAgvkbKFnBSA4wSmDnLkYDMsw7KkWsT3IiE/edit?usp=drive_link" # ƒeƒ“ƒvƒŒ[ƒg
-url_summary  = "https://docs.google.com/spreadsheets/d/1AKBk7D6UTkqCs40vUJ1lDFX0Ho41ItDrV8RybufYlWo/edit?usp=drive_link" # WŒv
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆãƒ•ã‚¡ã‚¤ãƒ«ã€é›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«
+url_template = "https://docs.google.com/spreadsheets/d/1DTvAV4FUbAgvkbKFnBSA4wSmDnLkYDMsw7KkWsT3IiE/edit?usp=drive_link" # ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ
+url_summary  = "https://docs.google.com/spreadsheets/d/1AKBk7D6UTkqCs40vUJ1lDFX0Ho41ItDrV8RybufYlWo/edit?usp=drive_link" # é›†è¨ˆ
 
-# ƒeƒ“ƒvƒŒ[ƒg‚©‚ç‚ÌŠe’c‘Ì—pƒtƒ@ƒCƒ‹ì¬‚ÌÛA‚±‚Ì’l‚É’c‘Ì–¼‚ğ•t—^‚µ‚½‚à‚Ì‚ªƒtƒ@ƒCƒ‹–¼‚Æ‚È‚é
-filename_header = "’²•zs–¯‘å‰ï(H)"
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‹ã‚‰ã®å„å›£ä½“ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã®éš›ã€ã“ã®å€¤ã«å›£ä½“åã‚’ä»˜ä¸ã—ãŸã‚‚ã®ãŒãƒ•ã‚¡ã‚¤ãƒ«åã¨ãªã‚‹
+filename_header = "èª¿å¸ƒå¸‚æ°‘å¤§ä¼š(ç§‹)"
 
-# ƒeƒ“ƒvƒŒ[ƒg‚©‚ç‚ÌŠe’c‘Ì—pƒtƒ@ƒCƒ‹ì¬‚ÌÛA‚±‚Ì’l‚É¼—ï‚ğ•}—]‚µ‚½‚à‚Ì‚ğA1—ñ‚Éo—Í‚·‚é
-sheet_header = "’²•zs–¯‘å‰ï"
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‹ã‚‰ã®å„å›£ä½“ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã®éš›ã€ã“ã®å€¤ã«è¥¿æš¦ã‚’æ‰¶ä½™ã—ãŸã‚‚ã®ã‚’A1åˆ—ã«å‡ºåŠ›ã™ã‚‹
+sheet_header = "èª¿å¸ƒå¸‚æ°‘å¤§ä¼š"
 
-# ’c‘Ì–¼‚ÌƒŠƒXƒg
+# å›£ä½“åã®ãƒªã‚¹ãƒˆ
 l_groupname = [
-  "’†‰›‰ï",
-  "õ’n",
-  "‘å’¬",
-  "¹•‰ï",
-  "[‘å›",
-  "•¶‘‘ŠÙ",
-  "‘æµ‹@“®‘à",
-  "’²•zŒx@",
-  "“d’Ê‘å",
-  "’²•z–k‚",
-  "_‘ã‚",
-  "–¾¡",
-  "‹Ë•ü—q",
-  "ƒAƒƒŠƒJƒ“",
-  "ƒhƒ‹ƒgƒ“",
-  "’²•z’†",
-  "_‘ã’†",
-  "]‚",
-  "ŒÂlQ‰Á",
+  "ä¸­å¤®ä¼š",
+  "æŸ“åœ°",
+  "å¤§ç”º",
+  "è–æ­¦ä¼š",
+  "æ·±å¤§å¯º",
+  "æ–‡è˜é¤¨",
+  "ç¬¬ä¸ƒæ©Ÿå‹•éšŠ",
+  "èª¿å¸ƒè­¦å¯Ÿ",
+  "é›»é€šå¤§",
+  "èª¿å¸ƒåŒ—é«˜",
+  "ç¥ä»£é«˜",
+  "æ˜æ²»",
+  "æ¡æœ‹å¥³å­",
+  "ã‚¢ãƒ¡ãƒªã‚«ãƒ³",
+  "ãƒ‰ãƒ«ãƒˆãƒ³",
+  "èª¿å¸ƒä¸­",
+  "ç¥ä»£ä¸­",
+  "ç‹›æ±Ÿé«˜",
+  "å€‹äººå‚åŠ ",
 ]
 
-# ŒWˆõ‚ÌWŒv’PˆÊiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j
+# ä¿‚å“¡ã®é›†è¨ˆå˜ä½ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰
 summary_staff = [
-  "R”»",
-  "ŒWˆõ",
-  "Ú‘ÒŒW",
-  "–{•”‚»‚Ì‘¼",
+  "å¯©åˆ¤",
+  "ä¿‚å“¡",
+  "æ¥å¾…ä¿‚",
+  "æœ¬éƒ¨ãã®ä»–",
 ]
 
-# ‘å‰ïƒvƒƒOƒ‰ƒ€ûq—p‚Ì’c‘Ì–¼•\‹L‚ğæ“¾‚·‚éƒƒ\ƒbƒh
+# å¤§ä¼šãƒ—ãƒ­ã‚°ãƒ©ãƒ å†Šå­ç”¨ã®å›£ä½“åè¡¨è¨˜ã‚’å–å¾—ã™ã‚‹ãƒ¡ã‚½ãƒƒãƒ‰
 def get_booklet_groupname(groupname, summary_name):
-	# ’c‘Ì–¼‚ğ—ªÌ‚Ì‚Ü‚Ü‚É‚µ‚½‚¢ê‡‚Í‚±‚¿‚ç
+	# å›£ä½“åã‚’ç•¥ç§°ã®ã¾ã¾ã«ã—ãŸã„å ´åˆã¯ã“ã¡ã‚‰
 	#return groupname
 	
-	# ’·‚¢’c‘Ì–¼‚É•ÏŠ·‚µ‚½‚¢ê‡‚Í‚±‚¿‚çiª‚ğƒRƒƒ“ƒgƒAƒEƒg‚µ‚Ä‚±‚¿‚ç‚ğ—LŒø‚É‚·‚éj
+	# é•·ã„å›£ä½“åã«å¤‰æ›ã—ãŸã„å ´åˆã¯ã“ã¡ã‚‰ï¼ˆâ†‘ã‚’ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã—ã¦ã“ã¡ã‚‰ã‚’æœ‰åŠ¹ã«ã™ã‚‹ï¼‰
 	dic_1 = {
-	  "’†‰›‰ï": "’†‰›Œ•“¹‰ï",
-	  "õ’n": "õ’nŒ•“¹‰ï",
-	  "‘å’¬": "‘å’¬Œ•“¹‹äŠy•”",
-	  "[‘å›": "[‘å›Œ•“¹‰ï",
-	  "“d’Ê‘å": "“d‹C’ÊM‘åŠw",
-	  "’²•z–k‚": "’²•z–k‚“™ŠwZ",
-	  "_‘ã‚": "_‘ã‚“™ŠwZ",
-	  "ƒhƒ‹ƒgƒ“": "ƒhƒ‹ƒgƒ““Œ‹Šw‰€",
-	  "ƒAƒƒŠƒJƒ“": "±ÒØ¶İ½¸°Ù²İ¼Ş¬Êßİ",
-	  "’²•z’†": "’²•z’†ŠwZ",
-	  "_‘ã’†": "_‘ã’†ŠwZ",
-	  "]‚": "]‚“™ŠwZ",
-	  "–î–ìŒû": "–î–ìŒûŒ•“¹‰ï",
+	  "ä¸­å¤®ä¼š": "ä¸­å¤®å‰£é“ä¼š",
+	  "æŸ“åœ°": "æŸ“åœ°å‰£é“ä¼š",
+	  "å¤§ç”º": "å¤§ç”ºå‰£é“å€¶æ¥½éƒ¨",
+	  "æ·±å¤§å¯º": "æ·±å¤§å¯ºå‰£é“ä¼š",
+	  "é›»é€šå¤§": "é›»æ°—é€šä¿¡å¤§å­¦",
+	  "èª¿å¸ƒåŒ—é«˜": "èª¿å¸ƒåŒ—é«˜ç­‰å­¦æ ¡",
+	  "ç¥ä»£é«˜": "ç¥ä»£é«˜ç­‰å­¦æ ¡",
+	  "ãƒ‰ãƒ«ãƒˆãƒ³": "ãƒ‰ãƒ«ãƒˆãƒ³æ±äº¬å­¦åœ’",
+	  "ã‚¢ãƒ¡ãƒªã‚«ãƒ³": "ï½±ï¾’ï¾˜ï½¶ï¾ï½½ï½¸ï½°ï¾™ï½²ï¾ï½¼ï¾ï½¬ï¾Šï¾Ÿï¾",
+	  "èª¿å¸ƒä¸­": "èª¿å¸ƒä¸­å­¦æ ¡",
+	  "ç¥ä»£ä¸­": "ç¥ä»£ä¸­å­¦æ ¡",
+	  "ç‹›æ±Ÿé«˜": "ç‹›æ±Ÿé«˜ç­‰å­¦æ ¡",
+	  "çŸ¢é‡å£": "çŸ¢é‡å£å‰£é“ä¼š",
 	}
 	
-	src = groupname.split(" ")[0] # ƒ`[ƒ€–¼––”ö‚ÌƒAƒ‹ƒtƒ@ƒxƒbƒg‚ğíœ
+	src = groupname.split(" ")[0] # ãƒãƒ¼ãƒ åæœ«å°¾ã®ã‚¢ãƒ«ãƒ•ã‚¡ãƒ™ãƒƒãƒˆã‚’å‰Šé™¤
 	dst = dic_1.get(src)
 	if dst != None:
 		return groupname.replace(src, dst)
 	
-	if src == "–¾¡":
-		if summary_name.find("’†Šw") >= 0:
-			return groupname.replace(src, "–¾¡’†ŠwZ")
-		elif summary_name.find("ˆê”Ê") >= 0:
-			return groupname.replace(src, "–¾¡‚“™ŠwZ")
+	if src == "æ˜æ²»":
+		if summary_name.find("ä¸­å­¦") >= 0:
+			return groupname.replace(src, "æ˜æ²»ä¸­å­¦æ ¡")
+		elif summary_name.find("ä¸€èˆ¬") >= 0:
+			return groupname.replace(src, "æ˜æ²»é«˜ç­‰å­¦æ ¡")
 	
-	if src == "‹Ë•ü—q":
-		if summary_name.find("’†Šw") >= 0:
-			return groupname.replace(src, "‹Ë•ü—q’†ŠwZ")
-		elif summary_name.find("ˆê”Ê") >= 0:
-			return groupname.replace(src, "‹Ë•ü—q‚“™ŠwZ")
+	if src == "æ¡æœ‹å¥³å­":
+		if summary_name.find("ä¸­å­¦") >= 0:
+			return groupname.replace(src, "æ¡æœ‹å¥³å­ä¸­å­¦æ ¡")
+		elif summary_name.find("ä¸€èˆ¬") >= 0:
+			return groupname.replace(src, "æ¡æœ‹å¥³å­é«˜ç­‰å­¦æ ¡")
 	
 	return groupname
 
-# TSVƒtƒ@ƒCƒ‹‚ÌƒtƒHƒ‹ƒ_
+# TSVãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ«ãƒ€
 download_folder = ".\\DownloadTSV"
 
-# ƒg[ƒiƒƒ“ƒgƒf[ƒ^ƒtƒ@ƒCƒ‹‚ÌƒtƒHƒ‹ƒ_
+# ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ«ãƒ€
 tournament_folder = ".\\TournamentFiles"
 
-# ƒTƒ}ƒŠƒf[ƒ^‚Ì—ñ”‚ğˆê’è‚É•Û‚Â‚½‚ß‚Ìƒƒ\ƒbƒh
+# ã‚µãƒãƒªãƒ‡ãƒ¼ã‚¿ã®åˆ—æ•°ã‚’ä¸€å®šã«ä¿ã¤ãŸã‚ã®ãƒ¡ã‚½ãƒƒãƒ‰
 def pad_list(l_value, length):
 	return l_value + [""] * max(0, length - len(l_value))
 
-# TSVƒtƒ@ƒCƒ‹‚©‚ç“ñŸŒ³”z—ñ‚ğ•Ô‹p‚·‚é
+# TSVãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰äºŒæ¬¡å…ƒé…åˆ—ã‚’è¿”å´ã™ã‚‹
 def tsv_get_all_values(tsv_filename):
 	import csv
 	
@@ -106,6 +105,6 @@ def tsv_get_all_values(tsv_filename):
 	with open(tsv_filename, newline='', encoding='utf-8') as tsvfile:
 		reader = csv.reader(tsvfile, delimiter='\t')
 		for row in reader:
-			# ‹ó—“‚ª None ‚É‚È‚ç‚È‚¢‚æ‚¤A‹ó•¶š‚É“ˆê
+			# ç©ºæ¬„ãŒ None ã«ãªã‚‰ãªã„ã‚ˆã†ã€ç©ºæ–‡å­—ã«çµ±ä¸€
 			result.append([cell if cell is not None else "" for cell in row])
 	return result

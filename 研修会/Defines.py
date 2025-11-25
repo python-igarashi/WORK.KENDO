@@ -1,48 +1,47 @@
-# coding: cp932
 service_account_file = "credentials_driveaccess.json"
 clients_secrets_file = "credentials_GoogleAuthKendoApp.json"
 
-# Googleƒhƒ‰ƒCƒu‚Ì‹¤—LURL‚©‚ç“]Ú‚·‚é
-drive_id = "1fJyapu7qwsIUkx20yY-rmK3IZBM06srs" # ƒhƒ‰ƒCƒu
-#drive_id = "1x-kXdsHh68GL88ZdVTNq0rdl4g10jC7v" # ƒhƒ‰ƒCƒu 2025.05.25‚ÌŒ¤C‰ï‚ÌƒoƒbƒNƒAƒbƒv - ƒeƒXƒg—p
+# Googleãƒ‰ãƒ©ã‚¤ãƒ–ã®å…±æœ‰URLã‹ã‚‰è»¢è¼‰ã™ã‚‹
+drive_id = "1fJyapu7qwsIUkx20yY-rmK3IZBM06srs" # ãƒ‰ãƒ©ã‚¤ãƒ–
+#drive_id = "1x-kXdsHh68GL88ZdVTNq0rdl4g10jC7v" # ãƒ‰ãƒ©ã‚¤ãƒ– 2025.05.25ã®ç ”ä¿®ä¼šã®ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ— - ãƒ†ã‚¹ãƒˆç”¨
 
-# ƒeƒ“ƒvƒŒ[ƒgƒtƒ@ƒCƒ‹AWŒvƒtƒ@ƒCƒ‹
-url_template = "https://docs.google.com/spreadsheets/d/1LL-lTI0U3lv0GQW2CWaYVHxghBKNgLql4Syrw6i_bP8/edit?usp=drive_link" # ƒeƒ“ƒvƒŒ[ƒg
-url_summary  = "https://docs.google.com/spreadsheets/d/1oy19HAJJFw5g016kwF77tdvq24W-llHACtOBWTbBcls/edit?usp=drive_link" # WŒv
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆãƒ•ã‚¡ã‚¤ãƒ«ã€é›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«
+url_template = "https://docs.google.com/spreadsheets/d/1LL-lTI0U3lv0GQW2CWaYVHxghBKNgLql4Syrw6i_bP8/edit?usp=drive_link" # ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ
+url_summary  = "https://docs.google.com/spreadsheets/d/1oy19HAJJFw5g016kwF77tdvq24W-llHACtOBWTbBcls/edit?usp=drive_link" # é›†è¨ˆ
 
-# ƒeƒ“ƒvƒŒ[ƒg‚©‚ç‚ÌŠe’c‘Ì—pƒtƒ@ƒCƒ‹ì¬‚ÌÛA‚±‚Ì’l‚É’c‘Ì–¼‚ğ•t—^‚µ‚½‚à‚Ì‚ªƒtƒ@ƒCƒ‹–¼‚Æ‚È‚é
-filename_header = "Œ¤C‰ï"
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‹ã‚‰ã®å„å›£ä½“ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã®éš›ã€ã“ã®å€¤ã«å›£ä½“åã‚’ä»˜ä¸ã—ãŸã‚‚ã®ãŒãƒ•ã‚¡ã‚¤ãƒ«åã¨ãªã‚‹
+filename_header = "ç ”ä¿®ä¼š"
 
-# ƒeƒ“ƒvƒŒ[ƒg‚©‚ç‚ÌŠe’c‘Ì—pƒtƒ@ƒCƒ‹ì¬‚ÌÛA‚±‚Ì’l‚É¼—ï‚ğ•}—]‚µ‚½‚à‚Ì‚ğA1—ñ‚Éo—Í‚·‚é
-sheet_header = "Œ¤C‰ïQ‰ÁÒ"
+# ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‹ã‚‰ã®å„å›£ä½“ç”¨ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã®éš›ã€ã“ã®å€¤ã«è¥¿æš¦ã‚’æ‰¶ä½™ã—ãŸã‚‚ã®ã‚’A1åˆ—ã«å‡ºåŠ›ã™ã‚‹
+sheet_header = "ç ”ä¿®ä¼šå‚åŠ è€…"
 
-# ’c‘Ì–¼‚ÌƒŠƒXƒg
+# å›£ä½“åã®ãƒªã‚¹ãƒˆ
 l_groupname = [
-  "’†‰›‰ï",
-  "õ’n",
-  "‘å’¬",
-  "¹•‰ï",
-  "[‘å›",
-  "•¶‘‘ŠÙ",
-  "“d’Ê‘å",
-  "]",
+  "ä¸­å¤®ä¼š",
+  "æŸ“åœ°",
+  "å¤§ç”º",
+  "è–æ­¦ä¼š",
+  "æ·±å¤§å¯º",
+  "æ–‡è˜é¤¨",
+  "é›»é€šå¤§",
+  "ç‹›æ±Ÿ",
 ]
 
-# ŒWˆõ‚ÌWŒv’PˆÊiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j
+# ä¿‚å“¡ã®é›†è¨ˆå˜ä½ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰
 summary_staff = [
-  "ˆê”Ê",
-  "¬Šw¶",
-  "’†Šw¶",
+  "ä¸€èˆ¬",
+  "å°å­¦ç”Ÿ",
+  "ä¸­å­¦ç”Ÿ",
 ]
 
-# TSVƒtƒ@ƒCƒ‹‚ÌƒtƒHƒ‹ƒ_
+# TSVãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ«ãƒ€
 download_folder = ".\\DownloadTSV"
 
-# ƒTƒ}ƒŠƒf[ƒ^‚Ì—ñ”‚ğˆê’è‚É•Û‚Â‚½‚ß‚Ìƒƒ\ƒbƒh
+# ã‚µãƒãƒªãƒ‡ãƒ¼ã‚¿ã®åˆ—æ•°ã‚’ä¸€å®šã«ä¿ã¤ãŸã‚ã®ãƒ¡ã‚½ãƒƒãƒ‰
 def pad_list(l_value, length):
 	return l_value + [""] * max(0, length - len(l_value))
 
-# TSVƒtƒ@ƒCƒ‹‚©‚ç“ñŸŒ³”z—ñ‚ğ•Ô‹p‚·‚é
+# TSVãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰äºŒæ¬¡å…ƒé…åˆ—ã‚’è¿”å´ã™ã‚‹
 def tsv_get_all_values(tsv_filename):
 	import csv
 	
@@ -50,6 +49,6 @@ def tsv_get_all_values(tsv_filename):
 	with open(tsv_filename, newline='', encoding='utf-8') as tsvfile:
 		reader = csv.reader(tsvfile, delimiter='\t')
 		for row in reader:
-			# ‹ó—“‚ª None ‚É‚È‚ç‚È‚¢‚æ‚¤A‹ó•¶š‚É“ˆê
+			# ç©ºæ¬„ãŒ None ã«ãªã‚‰ãªã„ã‚ˆã†ã€ç©ºæ–‡å­—ã«çµ±ä¸€
 			result.append([cell if cell is not None else "" for cell in row])
 	return result

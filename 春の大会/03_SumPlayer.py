@@ -1,4 +1,3 @@
-# coding: cp932
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import gspread
@@ -12,120 +11,120 @@ SCOPES = [
  ]
 
 
-# ========= ”FØ‚ÆƒT[ƒrƒX‰Šú‰» ========= #
+# ========= èªè¨¼ã¨ã‚µãƒ¼ãƒ“ã‚¹åˆæœŸåŒ– ========= #
 global creds, gc
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 gc = gspread.authorize(creds)
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚ÄWŒv‚ğs‚¤ƒƒ\ƒbƒh ========= #
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦é›†è¨ˆã‚’è¡Œã†ãƒ¡ã‚½ãƒƒãƒ‰ ========= #
 def Summary(summary_name, player_num, init_workbook=False):
-	print(f"----- {summary_name}: WŒvŠJn -----")
-	summary = [] # ‚±‚±‚ÉWŒvƒf[ƒ^‚ğì¬‚·‚é
+	print(f"----- {summary_name}: é›†è¨ˆé–‹å§‹ -----")
+	summary = [] # ã“ã“ã«é›†è¨ˆãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆã™ã‚‹
 	booklet = Booklet.booklet(player_num, summary_name)
 	
-	col_length = 10 # ƒTƒ}ƒŠ‚Ì—ñ”
+	col_length = 10 # ã‚µãƒãƒªã®åˆ—æ•°
 	
 	
-	# ========= ‘S’c‘Ì‚Ìƒtƒ@ƒCƒ‹‚©‚çƒf[ƒ^‚ğWŒv ========= #
-	#for groupname in ["‹L“ü—á"]: # ƒeƒXƒg—p
+	# ========= å…¨å›£ä½“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’é›†è¨ˆ ========= #
+	#for groupname in ["è¨˜å…¥ä¾‹"]: # ãƒ†ã‚¹ãƒˆç”¨
 	for groupname in Defines.l_groupname:
-		print(f"{groupname}: ˆ—’†...")
+		print(f"{groupname}: å‡¦ç†ä¸­...")
 		
-		# {’c‘Ì–¼}_{WŒv‘ÎÛ}.tsv ‚Ìƒf[ƒ^‚ğæ“¾
+		# {å›£ä½“å}_{é›†è¨ˆå¯¾è±¡}.tsv ã®ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 		tsv_filename = f"{Defines.download_folder}\\{groupname}_{summary_name}.tsv"
 		l_row = Defines.tsv_get_all_values(tsv_filename)
 		
-		# ‘Ss‚ğ‰ğÍ‚·‚é
-		l_team = [] # ƒ`[ƒ€ƒŠƒXƒg
-		team = [] # ‰ğÍ’†‚Ìƒ`[ƒ€ƒf[ƒ^
-		team_enable = False # ‰ğÍ’†‚Ìƒ`[ƒ€‚Ì–¼‚ª‹LÚ‚³‚ê‚Ä‚¢‚½‚çTrue‚É‚·‚é
+		# å…¨è¡Œã‚’è§£æã™ã‚‹
+		l_team = [] # ãƒãƒ¼ãƒ ãƒªã‚¹ãƒˆ
+		team = [] # è§£æä¸­ã®ãƒãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿
+		team_enable = False # è§£æä¸­ã®ãƒãƒ¼ãƒ ã®æ°åãŒè¨˜è¼‰ã•ã‚Œã¦ã„ãŸã‚‰Trueã«ã™ã‚‹
 		for row in l_row:
-			# ƒ`[ƒ€‚Ìƒwƒbƒ_s
-			if row[0] != None and row[0] != "" and row[2] == "–¼":
-				team_name = f"{groupname} {row[0][:1]}" # "{’c‘Ì–¼} {A-Z}" ‚Åƒ`[ƒ€–¼‚ğì¬
+			# ãƒãƒ¼ãƒ ã®ãƒ˜ãƒƒãƒ€è¡Œ
+			if row[0] != None and row[0] != "" and row[2] == "æ°å":
+				team_name = f"{groupname} {row[0][:1]}" # "{å›£ä½“å} {A-Z}" ã§ãƒãƒ¼ãƒ åã‚’ä½œæˆ
 				
-				value = row[0: col_length] # “Á’è‚Ì—ñ‚Ü‚ÅØ‚èæ‚é
-				value[0] = team_name # ’c‘Ì–¼‚ğ•t—^‚µ‚½ƒ`[ƒ€–¼‚Å’l‚ğ“ü‘Ö
+				value = row[0: col_length] # ç‰¹å®šã®åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
+				value[0] = team_name # å›£ä½“åã‚’ä»˜ä¸ã—ãŸãƒãƒ¼ãƒ åã§å€¤ã‚’å…¥æ›¿
 				
-				team = [ Defines.pad_list(value, col_length) ] # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
+				team = [ Defines.pad_list(value, col_length) ] # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
 				team_enable = False
 				continue
 			
-			# ƒ`[ƒ€‚Ìƒf[ƒ^s
-			if team != [] and row[1] != None and row[1] != "": # ŠÄ“Â‚à‚µ‚­‚Íƒ|ƒWƒVƒ‡ƒ“–¼‚ª‚ ‚éê‡‚Íƒf[ƒ^s
-				if row[2] == None or row[2] == "": # –¼‚É‹LÚ‚ª–³‚¢
-					value = row[0: 2] # –¼‚Ì’¼‘O—ñ‚Ü‚ÅØ‚èæ‚é
+			# ãƒãƒ¼ãƒ ã®ãƒ‡ãƒ¼ã‚¿è¡Œ
+			if team != [] and row[1] != None and row[1] != "": # ç›£ç£ã‚‚ã—ãã¯ãƒã‚¸ã‚·ãƒ§ãƒ³åãŒã‚ã‚‹å ´åˆã¯ãƒ‡ãƒ¼ã‚¿è¡Œ
+				if row[2] == None or row[2] == "": # æ°åã«è¨˜è¼‰ãŒç„¡ã„
+					value = row[0: 2] # æ°åã®ç›´å‰åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
 				else:
-					value = row[0: col_length] # “Á’è‚Ì—ñ‚Ü‚ÅØ‚èæ‚é
+					value = row[0: col_length] # ç‰¹å®šã®åˆ—ã¾ã§åˆ‡ã‚Šå–ã‚‹
 				
-				value = Defines.pad_list(value, col_length) # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
-				if summary_name.find("ˆê”Ê") >= 0: value[7] = value[7].split(' ')[-1] # ˆê”Ê‚Ì•”A’iˆÊ‚Ì’l‚ğC³B—áF"[10] ‹³mµ’i" ‚ğ "‹³mµ’i" ‚Æ‚·‚éB
+				value = Defines.pad_list(value, col_length) # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
+				if summary_name.find("ä¸€èˆ¬") >= 0: value[7] = value[7].split(' ')[-1] # ä¸€èˆ¬ã®éƒ¨ã€æ®µä½ã®å€¤ã‚’ä¿®æ­£ã€‚ä¾‹ï¼š"[10] æ•™å£«ä¸ƒæ®µ" ã‚’ "æ•™å£«ä¸ƒæ®µ" ã¨ã™ã‚‹ã€‚
 				
 				team.append(value)
 				
-				# –¼‚ª‹LÚ‚³‚ê‚Ä‚¢‚ê‚ÎWŒv‘ÎÛ‚Æ‚·‚é
+				# æ°åãŒè¨˜è¼‰ã•ã‚Œã¦ã„ã‚Œã°é›†è¨ˆå¯¾è±¡ã¨ã™ã‚‹
 				if row[2] != None and row[2] != "":
 					team_enable = True
 				
 				continue
 			
-			# ƒ`[ƒ€‚Ìƒf[ƒ^s‚ÌI—¹
+			# ãƒãƒ¼ãƒ ã®ãƒ‡ãƒ¼ã‚¿è¡Œã®çµ‚äº†
 			if team != [] and (row[1] == None or row[1] == ""):
-				# –¼‚ª‹LÚ‚³‚ê‚Ä‚¢‚½ƒ`[ƒ€‚Ìê‡Aƒ`[ƒ€ƒŠƒXƒg‚É’Ç‰Á‚·‚é
+				# æ°åãŒè¨˜è¼‰ã•ã‚Œã¦ã„ãŸãƒãƒ¼ãƒ ã®å ´åˆã€ãƒãƒ¼ãƒ ãƒªã‚¹ãƒˆã«è¿½åŠ ã™ã‚‹
 				if team_enable == True:
 					l_team.append(team)
 				
-				# ƒ`[ƒ€ƒf[ƒ^‚ğ‰Šú‰»
+				# ãƒãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ã‚’åˆæœŸåŒ–
 				team = []
 				team_enable = False
 				continue
 		
-		# ‘Ss‰ğÍŒã‚Ìˆ—
+		# å…¨è¡Œè§£æå¾Œã®å‡¦ç†
 		
-		# –¼‚ª‹LÚ‚³‚ê‚Ä‚¢‚½ƒ`[ƒ€‚Ìê‡Aƒ`[ƒ€ƒŠƒXƒg‚É’Ç‰Á‚·‚é
+		# æ°åãŒè¨˜è¼‰ã•ã‚Œã¦ã„ãŸãƒãƒ¼ãƒ ã®å ´åˆã€ãƒãƒ¼ãƒ ãƒªã‚¹ãƒˆã«è¿½åŠ ã™ã‚‹
 		if team_enable == True:
 			l_team.append(team)
 		
-		# ’c‘Ì‚Ìƒ`[ƒ€‚ª1‚Â‚¾‚¯‚¾‚Á‚½‚çAƒ`[ƒ€–¼––”ö‚ÌƒAƒ‹ƒtƒ@ƒxƒbƒg‚ğíœ
+		# å›£ä½“ã®ãƒãƒ¼ãƒ ãŒ1ã¤ã ã‘ã ã£ãŸã‚‰ã€ãƒãƒ¼ãƒ åæœ«å°¾ã®ã‚¢ãƒ«ãƒ•ã‚¡ãƒ™ãƒƒãƒˆã‚’å‰Šé™¤
 		if len(l_team) == 1:
 			team = l_team[0]
-			team[0][0] = team[0][0].split(" ")[0] # ƒ`[ƒ€–¼‚Ì•¶š—ñ‚ğXV
+			team[0][0] = team[0][0].split(" ")[0] # ãƒãƒ¼ãƒ åã®æ–‡å­—åˆ—ã‚’æ›´æ–°
 		
-		# ƒ`[ƒ€‚Ìƒf[ƒ^s‚Ì––”ö‚É‹ós‚ğ’Ç‰ÁŒãAWŒv‘ÎÛ‚É’Ç‰Á‚·‚é
+		# ãƒãƒ¼ãƒ ã®ãƒ‡ãƒ¼ã‚¿è¡Œã®æœ«å°¾ã«ç©ºè¡Œã‚’è¿½åŠ å¾Œã€é›†è¨ˆå¯¾è±¡ã«è¿½åŠ ã™ã‚‹
 		for team in l_team:
-			team.append(Defines.pad_list([], col_length)) # ƒTƒ}ƒŠ‚Ì—ñ”iƒŠƒXƒg‚Ì—v‘f”j‚ª col_length ‚Éˆê’v‚·‚é‚æ‚¤‚É’²®
+			team.append(Defines.pad_list([], col_length)) # ã‚µãƒãƒªã®åˆ—æ•°ï¼ˆãƒªã‚¹ãƒˆã®è¦ç´ æ•°ï¼‰ãŒ col_length ã«ä¸€è‡´ã™ã‚‹ã‚ˆã†ã«èª¿æ•´
 			summary = summary + team
 			booklet.append_team(team)
 	
 	
-	# ========= WŒvƒXƒvƒŒƒbƒhƒV[ƒg‚Öo—Í ========= #
-	print(f"{summary_name}: o—Í’†...")
+	# ========= é›†è¨ˆã‚¹ãƒ—ãƒ¬ãƒƒãƒ‰ã‚·ãƒ¼ãƒˆã¸å‡ºåŠ› ========= #
+	print(f"{summary_name}: å‡ºåŠ›ä¸­...")
 	sheet_dst = gc.open_by_url(Defines.url_summary).worksheet(summary_name)
 	sheet_dst.clear()
 	sheet_dst.update(range_name = f"A1:J{len(summary)}", values = summary)
 	
 	
-	# ========= ƒeƒXƒg ========= #
-	#print(f"----- WŒv: {summary_name} -----")
+	# ========= ãƒ†ã‚¹ãƒˆ ========= #
+	#print(f"----- é›†è¨ˆ: {summary_name} -----")
 	#for row in summary:
 	#	print(row)
 	
 	
-	# ========= ‘å‰ïƒvƒƒOƒ‰ƒ€ûq‚Ì‘Ièˆê——‚ğo—Í ========= #
-	booklet.output_xlsx(f"BookletFiles\\PlayerList.xlsx", init_workbook=init_workbook)
+	# ========= å¤§ä¼šãƒ—ãƒ­ã‚°ãƒ©ãƒ å†Šå­ã®é¸æ‰‹ä¸€è¦§ã‚’å‡ºåŠ› ========= #
+	booklet.output_xlsx(f"BookletFiles\\PlayerList_æ˜¥.xlsx", init_workbook=init_workbook)
 	
 	
-	# ========= ƒeƒXƒg ========= #
-	#print(f"----- ‘å‰ïƒvƒƒOƒ‰ƒ€: {summary_name} -----")
+	# ========= ãƒ†ã‚¹ãƒˆ ========= #
+	#print(f"----- å¤§ä¼šãƒ—ãƒ­ã‚°ãƒ©ãƒ : {summary_name} -----")
 	#for row in booklet.summary:
 	#	print(row)
 	
-	print(f"{summary_name}: WŒv‚ğI—¹‚µ‚Ü‚µ‚½B")
+	print(f"{summary_name}: é›†è¨ˆã‚’çµ‚äº†ã—ã¾ã—ãŸã€‚")
 
 
-# ========= –¼ÌiWŒvƒtƒ@ƒCƒ‹‚ÌƒV[ƒg–¼j‚ğw’è‚µ‚ÄWŒv‚ğs‚¤ ========= #
-Summary("¬Šw¶‚Ì•”",   3, init_workbook=True)
-Summary("’†Šw¶‚Ì•”",   3)
-Summary("ˆê”Ê—q‚Ì•”", 3)
-Summary("ˆê”Ê‚Ì•”",     5)
+# ========= åç§°ï¼ˆé›†è¨ˆãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚·ãƒ¼ãƒˆåï¼‰ã‚’æŒ‡å®šã—ã¦é›†è¨ˆã‚’è¡Œã† ========= #
+Summary("å°å­¦ç”Ÿã®éƒ¨",   3, init_workbook=True)
+Summary("ä¸­å­¦ç”Ÿã®éƒ¨",   3)
+Summary("ä¸€èˆ¬å¥³å­ã®éƒ¨", 3)
+Summary("ä¸€èˆ¬ã®éƒ¨",     5)
