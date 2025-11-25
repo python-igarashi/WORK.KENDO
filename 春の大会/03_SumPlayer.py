@@ -19,7 +19,7 @@ gc = gspread.authorize(creds)
 
 
 # ========= 名称（集計ファイルのシート名）を指定して集計を行うメソッド ========= #
-def Summary(summary_name, player_num):
+def Summary(summary_name, player_num, init_workbook=False):
 	print(f"----- {summary_name}: 集計開始 -----")
 	summary = [] # ここに集計データを作成する
 	booklet = Booklet.booklet(player_num, summary_name)
@@ -105,6 +105,7 @@ def Summary(summary_name, player_num):
 	sheet_dst.clear()
 	sheet_dst.update(range_name = f"A1:J{len(summary)}", values = summary)
 	
+	
 	# ========= テスト ========= #
 	#print(f"----- 集計: {summary_name} -----")
 	#for row in summary:
@@ -112,7 +113,8 @@ def Summary(summary_name, player_num):
 	
 	
 	# ========= 大会プログラム冊子の選手一覧を出力 ========= #
-	booklet.output_tsv(f"BookletFiles\\{summary_name}.tsv")
+	booklet.output_xlsx(f"BookletFiles\\PlayerList.xlsx", init_workbook=init_workbook)
+	
 	
 	# ========= テスト ========= #
 	#print(f"----- 大会プログラム: {summary_name} -----")
@@ -123,7 +125,7 @@ def Summary(summary_name, player_num):
 
 
 # ========= 名称（集計ファイルのシート名）を指定して集計を行う ========= #
-Summary("小学生の部", 3)
-Summary("中学生の部", 3)
+Summary("小学生の部",   3, init_workbook=True)
+Summary("中学生の部",   3)
 Summary("一般女子の部", 3)
-Summary("一般の部", 5)
+Summary("一般の部",     5)
