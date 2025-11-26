@@ -95,7 +95,7 @@ def Summary(summary_name, player_num, init_workbook=False):
 		for team in l_team:
 			team.append(Defines.pad_list([], col_length)) # サマリの列数（リストの要素数）が col_length に一致するように調整
 			summary = summary + team
-			booklet.append_team(team)
+			booklet.append_team(team, groupname)
 	
 	
 	# ========= 集計スプレッドシートへ出力 ========= #

@@ -1,8 +1,27 @@
 import Defines
 import os
+from dataclasses import dataclass
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
+
+
+# --------------------
+# 基本データ構造
+# --------------------
+@dataclass
+class Team:
+	name: str # チーム名
+	manager: str # 監督
+	groupname: str # 団体名
+	players: list # 選手リスト（class player の配列）。3人制部門であれば要素数3。
+
+@dataclass
+class Player:
+	position: str # ポジション（先鋒、次鋒、中堅、副将、大将）
+	name: str # 氏名
+	kana: str # ふりがな
+	grade_or_rank: str # 学年もしくは段位
 
 
 # ─────────────────────────────
@@ -20,7 +39,7 @@ class booklet:
 	# ─────────────────────────────
 	#  チームデータを追加する
 	# ─────────────────────────────
-	def append_team(self, team):
+	def append_team(self, team_values, groupname):
 		self.team_index += 1
 		
 		team_offset_Y = self.team_index // self.teams_per_line
@@ -35,51 +54,38 @@ class booklet:
 		
 		# 一覧の左端のチームの場合、summaryに横に並べるチーム数分の行列を追加する
 		if team_offset_X == 0:
-			self.summary += [[""] * num_cols * self.teams_per_line for i in range(num_rows)]
+			self.summary += [[None] * self.teams_per_line]
 		
-		summary_offset_Y = team_offset_Y * num_rows
-		summary_offset_X = team_offset_X * num_cols
+		# 団体情報
+		team = Team(
+			team_values[0][0], # チーム名
+			team_values[1][2], # 監督
+			groupname, # 団体名
+			[None] * self.player_num) # 選手リスト
 		
-		# 団体行
-		row_cur = 0
-		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "団体名"
-		self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = Defines.get_booklet_groupname(team[0][0], self.summary_name)
+		self.summary[team_offset_Y][team_offset_X] = team
 		
-		# 監督行
-		row_cur += 1
-		self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = "監督"
-		self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[1][2]
-		
-		# 選手行
+		# 選手情報
 		for i in range(self.player_num):
-			# ふりがな行
-			row_cur += 1
-			self.summary[row_cur + summary_offset_Y][0 + summary_offset_X] = team[2 + i][1] # ポジション(先鋒, ...)
-			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][3] # ふりがな
-			if self.summary_name.find("一般") >= 0:
-				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][7] # 段位
-			else:
-				self.summary[row_cur + summary_offset_Y][2 + summary_offset_X] = team[2 + i][5] + ("" if team[2 + i][5] == "" else "年") # 学年 ("" if self.summary_name.find("一般") >= 0 else "年")  # 学年/段位
+			player = Player(
+				team_values[2 + i][1], # ポジション(先鋒, ...)
+				team_values[2 + i][2], # 氏名
+				team_values[2 + i][3], # ふりがな
+				"") # 段位 or 学年
 			
-			# 氏名行
-			row_cur += 1
-			self.summary[row_cur + summary_offset_Y][1 + summary_offset_X] = team[2 + i][2] # 氏名(先鋒, ...)
-	
-	
-	# ─────────────────────────────
-	#  全てのチームをTSV形式で出力する
-	# ─────────────────────────────
-	def output_tsv(self, path):
-		import csv
-		with open(path, mode="w", newline="", encoding="utf-8") as f:
-			writer = csv.writer(f, delimiter="\t")
-			writer.writerows(self.summary)
+			if self.summary_name.find("一般") >= 0:
+				player.grade_or_rank = team_values[2 + i][7] # 段位
+			else:
+				player.grade_or_rank = team_values[2 + i][5] + ("" if team_values[2 + i][5] == "" else "年") # 学年
+			
+			team.players[i] = player
 	
 	
 	# ─────────────────────────────
 	#  全てのチームをEXCEL形式で出力する
 	# ─────────────────────────────
 	def output_xlsx(self, path, init_workbook = False):
+		
 		# ─────────────────────────────
 		#  Excel 初期化
 		# ─────────────────────────────
@@ -114,77 +120,107 @@ class booklet:
 
 		ws.title = self.summary_name
 		for team_idx in range(self.teams_per_line):
-			ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width * 0.7 # ポジション の列幅
+			ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 1 + mergin)].width * 0.6 # ポジション の列幅
 			ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 2 + mergin)].width * 2   # 選手名称 の列幅
-			ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width * 0.5 # 学年 の列幅
+			ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width = ws.column_dimensions[get_column_letter(3 * team_idx + 3 + mergin)].width * 0.75 # 学年/段位 の列幅
 
 		thin = Side(style="thin")    # 細線
 		thick = Side(style="double") # 太線
 		
 		
 		# ─────────────────────────────
-		#  チーム情報
+		#  チーム情報を出力
 		# ─────────────────────────────
-		for row, rowdata in enumerate(self.summary, start=1):
-			for col, value in enumerate(rowdata, start=1):
-				ws.cell(row=row + mergin, column=col + mergin, value=value)
+		for team_idx_Y, rowdata in enumerate(self.summary):
+			for team_idx_X, team in enumerate(rowdata):
+				if team == None:
+					continue
+				
+				row = team_idx_Y * (2 + self.player_num * 2) + 1
+				col = team_idx_X * 3 + 1
+				
+				# 団体名
+				ws.cell(row=row + mergin, column=col + 0 + mergin, value="団体名")
+				ws.cell(row=row + mergin, column=col + 1 + mergin, value=team.name)
+				
+				# 監督
+				row += 1
+				ws.cell(row=row + mergin, column=col + 0 + mergin, value="監督")
+				ws.cell(row=row + mergin, column=col + 1 + mergin, value=team.manager)
+				
+				# 選手
+				row += 1
+				for player_idx, player in enumerate(team.players):
+					row_player = row + (player_idx * 2)
+					ws.cell(row=row_player + mergin, column=col + 0 + mergin, value=player.position)
+					ws.cell(row=row_player + mergin, column=col + 1 + mergin, value=player.kana)
+					ws.cell(row=row_player + mergin, column=col + 2 + mergin, value=player.grade_or_rank)
+					ws.cell(row=row_player + mergin + 1, column=col + 1 + mergin, value=player.name)
 		
 		
 		# ─────────────────────────────
 		#  ポジション/学年/段位 のセル結合
 		# ─────────────────────────────
-		for row, rowdata in enumerate(self.summary, start=1):
-			for col, value in enumerate(rowdata, start=1):
-				# 団体名を太字にする
-				#if col % 3 == 1 and value != "" and value == "団体名":
-				#	ws.cell(row + mergin, col + 1 + mergin).font = Font(bold=True)
+		for team_idx_Y, rowdata in enumerate(self.summary):
+			for team_idx_X, team in enumerate(rowdata):
+				if team == None:
+					continue
 				
-				# ポジション
-				if col % 3 == 1 and value != "" and value != "団体名" and value != "監督":
-					ws.merge_cells(start_row=row + mergin, start_column=col + mergin, end_row=row+1 + mergin, end_column=col + mergin)
-					ws.cell(row + mergin, col + mergin).alignment = Alignment(horizontal="right", vertical="center")
+				row = team_idx_Y * (2 + self.player_num * 2) + 1
+				row += 2 # 団体名の行、監督の行で併せて2行をプラス
+				col = team_idx_X * 3 + 1
 				
-				# 学年/段位
-				if col % 3 == 0 and value != "":
-					ws.merge_cells(start_row=row + mergin, start_column=col + mergin, end_row=row+1 + mergin, end_column=col + mergin)
-					ws.cell(row + mergin, col + mergin).alignment = Alignment(horizontal="left", vertical="center")
+				for player_idx, player in enumerate(team.players):
+					row_player = row + (player_idx * 2)
+					
+					# ポジション
+					ws.merge_cells(start_row=row_player + mergin, start_column=col + mergin, end_row=row_player+1 + mergin, end_column=col + mergin)
+					
+					# 学年/段位
+					ws.merge_cells(start_row=row_player + mergin, start_column=col + 2 + mergin, end_row=row_player+1 + mergin, end_column=col + 2 + mergin)
 		
 		
 		# ─────────────────────────────
 		#  チームの周囲に太線、それ以外に細線
 		# ─────────────────────────────
-		for row, rowdata in enumerate(self.summary, start=1):
-			for team_idx in range(self.teams_per_line):
-				if rowdata[team_idx * 3] == "団体名":
-					row_bottom = row + (self.player_num * 2) + 1 # チームの最終行
-					col = (team_idx * 3) + 1 # チームの最左列
-					col_right = col + 2      # チームの最右列
+		for team_idx_Y, rowdata in enumerate(self.summary):
+			for team_idx_X, team in enumerate(rowdata):
+				if team == None:
+					continue
+				
+				row = team_idx_Y * (2 + self.player_num * 2) + 1 # チームの最上行
+				col = team_idx_X * 3 + 1 # チームの最左列
+				row_bottom = row + (self.player_num * 2) + 1 # チームの最終行
+				
+				# 団体名の行（チームの一番上）
+				ws.cell(row + mergin, col + mergin).alignment = Alignment(horizontal="right")
+				ws.cell(row + mergin, col + mergin).border = Border(top=thick, bottom=thin, left=thick, right=thin)
+				ws.cell(row + mergin, col + 1 + mergin).border = Border(top=thick, bottom=thin, left=thin)
+				ws.cell(row + mergin, col + 2 + mergin).border = Border(top=thick, bottom=thin, right=thick)
+				
+				# 監督の行
+				ws.cell(row + 1 + mergin, col + mergin).alignment = Alignment(horizontal="right")
+				ws.cell(row + 1 + mergin, col + mergin).border = Border(top=thin, bottom=thin, left=thick, right=thin)
+				ws.cell(row + 1 + mergin, col + 1 + mergin).border = Border(top=thin, bottom=thin, left=thin)
+				ws.cell(row + 1 + mergin, col + 2 + mergin).border = Border(top=thin, bottom=thin, right=thick)
+				
+				# 選手毎
+				for row2 in range(row + 2, row_bottom + 1, 2):
+					ws.cell(row2 + mergin, col + mergin).alignment = Alignment(horizontal="right", vertical="center")
+					ws.cell(row2 + mergin, col + 2 + mergin).alignment = Alignment(horizontal="left", vertical="center")
 					
-					# 団体名の行（チームの一番上）
-					ws.cell(row + mergin, col + mergin).border = Border(top=thick, bottom=thin, left=thick, right=thin)
-					ws.cell(row + mergin, col + 1 + mergin).border = Border(top=thick, bottom=thin, left=thin)
-					ws.cell(row + mergin, col + 2 + mergin).border = Border(top=thick, bottom=thin, right=thick)
+					ws.cell(row2 + mergin, col + mergin).border = Border(top=thin, left=thick, right=thin)
+					ws.cell(row2 + mergin, col + 1 + mergin).border = Border(top=thin, left=thin, right=thin)
+					ws.cell(row2 + mergin, col + 2 + mergin).border = Border(top=thin, left=thin, right=thick)
 					
-					# 監督の行
-					ws.cell(row + 1 + mergin, col + mergin).alignment = Alignment(horizontal="right")
-					ws.cell(row + 1 + mergin, col + mergin).border = Border(top=thin, bottom=thin, left=thick, right=thin)
-					ws.cell(row + 1 + mergin, col + 1 + mergin).border = Border(top=thin, bottom=thin, left=thin)
-					ws.cell(row + 1 + mergin, col + 2 + mergin).border = Border(top=thin, bottom=thin, right=thick)
-					
-					# 選手毎
-					for row2 in range(row + 2, row_bottom + 1, 2):
-						ws.cell(row2 + mergin, col + mergin).border = Border(top=thin, left=thick, right=thin)
-						ws.cell(row2 + mergin, col + 1 + mergin).border = Border(top=thin, left=thin, right=thin)
-						ws.cell(row2 + mergin, col + 2 + mergin).border = Border(top=thin, left=thin, right=thick)
-						
-						ws.cell(row2 + 1 + mergin, col + mergin).border = Border(bottom=thin, left=thick, right=thin)
-						ws.cell(row2 + 1 + mergin, col + 1 + mergin).border = Border(bottom=thin, left=thin, right=thin)
-						ws.cell(row2 + 1 + mergin, col + 2 + mergin).border = Border(bottom=thin, left=thin, right=thick)
-					
-					# チームの一番下
-					ws.cell(row_bottom + mergin, col + mergin).border = Border(bottom=thick, left=thick, right=thin)
-					ws.cell(row_bottom + mergin, col + 1 + mergin).border = Border(bottom=thick, left=thin, right=thin)
-					ws.cell(row_bottom + mergin, col + 2 + mergin).border = Border(bottom=thick, left=thin, right=thick)
+					ws.cell(row2 + 1 + mergin, col + mergin).border = Border(bottom=thin, left=thick, right=thin)
+					ws.cell(row2 + 1 + mergin, col + 1 + mergin).border = Border(bottom=thin, left=thin, right=thin)
+					ws.cell(row2 + 1 + mergin, col + 2 + mergin).border = Border(bottom=thin, left=thin, right=thick)
+				
+				# チームの一番下
+				ws.cell(row_bottom + mergin, col + mergin).border = Border(bottom=thick, left=thick, right=thin)
+				ws.cell(row_bottom + mergin, col + 1 + mergin).border = Border(bottom=thick, left=thin, right=thin)
+				ws.cell(row_bottom + mergin, col + 2 + mergin).border = Border(bottom=thick, left=thin, right=thick)
 		
 		
 		# ファイルを保存する
