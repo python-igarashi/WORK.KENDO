@@ -56,7 +56,7 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 		# 団体のチームが1つだけだったら、チーム名末尾のアルファベットを削除
 		if len(l_team) == 1:
 			team = l_team[0]
-			l_team[0] = Tournament.Participant(team.name.split(" ")[0], team.kana, team.team) # チーム名の文字列を更新
+			l_team[0] = Tournament.Participant(team.name.split(" ")[0], team.kana, team.groupname) # チーム名の文字列を更新
 		
 		# 集計対象に追加する
 		l_participant = l_participant + l_team

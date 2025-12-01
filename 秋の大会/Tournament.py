@@ -11,7 +11,7 @@ import math, random, os
 class Participant:
 	name: str
 	kana: str # ふりがな
-	team: Optional[str]  # 団体名（なしなら None）
+	groupname: Optional[str]  # 団体名（なしなら None）
 
 @dataclass(frozen=True)
 class Ref:
@@ -121,14 +121,14 @@ def diversified_order(participants: List[Participant], seed: Optional[int]) -> L
 	# バケット化 & 各バケット内はシャッフル
 	buckets = defaultdict(list)
 	for p in participants:
-		buckets[p.team].append(p)
+		buckets[p.groupname].append(p)
 	for k in buckets:
 		rnd.shuffle(buckets[k])
 
 	# ① チームを「人数降順」でグルーピングし、同サイズ内はランダム
 	by_size = defaultdict(list)
-	for team, members in buckets.items():
-		by_size[len(members)].append(team)
+	for groupname, members in buckets.items():
+		by_size[len(members)].append(groupname)
 
 	sizes = sorted(by_size.keys(), reverse=True)
 	bucket_keys: List[Optional[str]] = []
@@ -206,7 +206,7 @@ def _assign_pairs_with_bye_and_lookahead(
 		w_end = min(idx + lookahead, len(order))
 		if team_to_avoid:
 			cands = [j for j in range(idx, w_end)
-					 if not (order[j].team and order[j].team == team_to_avoid)]
+					 if not (order[j].groupname and order[j].groupname == team_to_avoid)]
 			if cands:
 				j = rnd.choice(cands)
 				p = order[j]
@@ -245,7 +245,7 @@ def _assign_pairs_with_bye_and_lookahead(
 		if both_bye:
 			# 2回戦同団体を避けるよう、異なる団体の2人を優先して選ぶ
 			a = pop_next()
-			b = pick_with_avoid(a.team)
+			b = pick_with_avoid(a.groupname)
 
 			# 両方BYEの2試合を埋める
 			result[i0] = (a, bye)
@@ -266,7 +266,7 @@ def _assign_pairs_with_bye_and_lookahead(
 
 			# 非BYE試合：a を出して、b は先読みで a と同団体を避けて選ぶ
 			a = pop_next()
-			b = pick_with_avoid(a.team)
+			b = pick_with_avoid(a.groupname)
 			result[i] = (a, b)
 
 	# None の保険処理
@@ -308,7 +308,7 @@ def _future_round_penalty(
             return None
         if getattr(p, "name", None) == "BYE":
             return None
-        t = getattr(p, "team", None)
+        t = getattr(p, "groupname", None)
         return t if t else None
 
     # 団体ごとに葉インデックスを集計
@@ -360,7 +360,7 @@ def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int
     M = len(pairs)
     half_matches = M // 2
 
-    # team -> [top_count, bottom_count]
+    # groupname -> [top_count, bottom_count]
     counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
 
     for i, (a, b) in enumerate(pairs):
@@ -369,7 +369,7 @@ def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int
             # BYEは無視
             if getattr(p, "name", None) == "BYE":
                 continue
-            t = getattr(p, "team", None)
+            t = getattr(p, "groupname", None)
             if not t:
                 continue
             counts[t][half] += 1
@@ -400,8 +400,8 @@ def _conflicts(pairs: List[Pair]) -> int:
 	# 1) 1回戦の同一団体 → 可能な限り避ける
 	for a, b in pairs:
 		if not is_bye(a) and not is_bye(b):
-			ta = getattr(a, "team", None)
-			tb = getattr(b, "team", None)
+			ta = getattr(a, "groupname", None)
+			tb = getattr(b, "groupname", None)
 			if ta and tb and ta == tb:
 				v1 += 1
 
@@ -418,7 +418,7 @@ def _conflicts(pairs: List[Pair]) -> int:
 
 		# (BYE,P) vs (BYE,Q): P と Q は2回戦で直接対戦 → 可能な限り避ける
 		if a_has_bye and b_has_bye and a_real and b_real:
-			tP, tQ = getattr(a_real[0], "team", None), getattr(b_real[0], "team", None)
+			tP, tQ = getattr(a_real[0], "groupname", None), getattr(b_real[0], "groupname", None)
 			if tP and tQ and tP == tQ:
 				v1 += 1
 
@@ -427,7 +427,7 @@ def _conflicts(pairs: List[Pair]) -> int:
 		else:
 			for P in a_real:
 				for Q in b_real:
-					tP, tQ = getattr(P, "team", None), getattr(Q, "team", None)
+					tP, tQ = getattr(P, "groupname", None), getattr(Q, "groupname", None)
 					if tP and tQ and tP == tQ:
 						if a_has_bye or b_has_bye:
 							v2 += 10
@@ -528,7 +528,7 @@ def print_bracket(rounds: List[Round]) -> None:
 
 	def slot_str(slot: Slot) -> str:
 		if isinstance(slot, Participant):
-			return f"{slot.name} ({slot.team or '-'})"
+			return f"{slot.name} ({slot.groupname or '-'})"
 		return f"Winner of Match {slot.match_index + 1}"
 
 	total = len(rounds)
@@ -690,7 +690,7 @@ def save_bracket_xlsx(
 		ws.cell(row, 2).value = player_no
 		kana = f"\n({player.kana})" if player.kana != None and player.kana != "" else ""
 		ws.cell(row, 3).value = player.name + kana
-		ws.cell(row, 4).value = f"[{player.team}]"
+		ws.cell(row, 4).value = f"[{player.groupname}]"
 
 	for match in r0:
 		if is_real(match.left):

@@ -42,8 +42,8 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 	#print(f"{summary_name}: 出力中...")
 	l_participant = []
 	for value in summary:
-		#groupname = Defines.get_booklet_groupname(value[2], summary_name)
-		groupname = value[2]
+		#groupname = Defines.get_booklet_groupname(value[indexof_groupname], summary_name)
+		groupname = value[indexof_groupname]
 		l_participant.append(Tournament.Participant(value[0], value[1], groupname))
 	
 	rounds = Tournament.build_full_bracket(l_participant, seed=seed)
