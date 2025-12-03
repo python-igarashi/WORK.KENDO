@@ -34,6 +34,14 @@ Round = List[Match]
 def next_power_of_two(n: int) -> int:
 	return 1 if n <= 1 else 2 ** math.ceil(math.log2(n))
 
+def _is_bye(p) -> bool:
+	return (p is None) or (getattr(p, "name", None) == "BYE")
+
+def _groupname(p) -> str | None:
+	if _is_bye(p):
+		return None
+	return getattr(p, "groupname", None) or None
+
 def bye_positions_balanced_halves(M: int, B: int) -> list[int]:
 	"""
 	総試合数 M を 4 クォーターに分けつつ、
@@ -170,109 +178,297 @@ def diversified_order(participants: List[Participant], seed: Optional[int]) -> L
 # --------------------
 Pair = Tuple[Participant, Participant]
 
+from collections import Counter
+from typing import Optional
+
+from collections import Counter
+from typing import Optional
+
 def _assign_pairs_with_bye_and_lookahead(
-	order: list[Participant],
+	order: list["Participant"],
 	M: int,
 	bye_pos: set[int],
 	lookahead: int,
-	rnd=None,
-) -> list[tuple[Participant, Participant]]:
+	rnd,
+) -> list[tuple["Participant", "Participant"]]:
 	"""
-	1回戦の割付を“親ペア（2試合）単位”で行い、
-	親が BYE×2 の場合は 2回戦で同一団体同士になりにくいように
-	異なる団体の選手を優先して BYE に割り当てる。
-	それ以外は従来の先読みロジックを維持。
+	1回戦のペアを構築する（half分散対応版）。
+
+	目的：
+	- v1（初戦の同団体対戦）は可能な限り0（ハード最優先）
+	  -> b選びは同団体を窓→全体で探索して回避
+	  -> a選びも「相手(別団体)が残る」候補を優先して詰みを回避
+	- half（上半分/下半分）への団体偏りを抑える（ソフト制約）
+	  -> 団体gの総人数 total[g] に対し、各halfへ ceil(total[g]/2) を超えて置かないよう努力
+	  -> どうしても無理なら妥協する
+	- v2/v3（親ペア内のクロス）は、2試合目のa側で used を避けるなど、できる範囲で抑える（ソフト）
 	"""
-	if rnd is None:
-		import random
-		rnd = random.Random()
 
-	bye = Participant("BYE", None, None)
-	order = order[:]  # 破壊しない
-	result: list[tuple[Participant, Participant] | None] = [None] * M
+	bye = Participant("BYE", "BYE", "-")
 
+	# order読み取り位置
 	idx = 0
 
-	def pop_next() -> Participant:
+	# resultは最初にBYEで埋める（後で _set_match で確定）
+	result: list[tuple["Participant", "Participant"]] = [(bye, bye) for _ in range(M)]
+
+	# --- half分散（上半分/下半分）のソフト制約用 ---
+	total_by_group = Counter()
+	for p in order:
+		g = _groupname(p)
+		if g:
+			total_by_group[g] += 1
+
+	placed_half = {g: [0, 0] for g in total_by_group.keys()}  # [upper, lower]
+
+	def half_of_match(mi: int) -> int:
+		# 0=上半分, 1=下半分
+		return 0 if mi < (M // 2) else 1
+
+	def half_ok(g: Optional[str], half: int) -> bool:
+		# BYE等は気にしない
+		if not g:
+			return True
+		# ceil(total/2) をそのhalfへのソフト上限とする
+		limit = (total_by_group[g] + 1) // 2
+		return placed_half[g][half] < limit
+
+	def count_place(p: "Participant", mi: int) -> None:
+		g = _groupname(p)
+		if not g:
+			return
+		h = half_of_match(mi)
+		placed_half[g][h] += 1
+
+	def set_match(mi: int, a: "Participant", b: "Participant") -> None:
+		result[mi] = (a, b)
+		if not _is_bye(a):
+			count_place(a, mi)
+		if not _is_bye(b):
+			count_place(b, mi)
+
+	# --- orderの要素を idx へ引っ張る操作 ---
+	def pull_to_front(j: int) -> "Participant":
 		nonlocal idx
-		p = order[idx] if idx < len(order) else bye
-		if idx < len(order):
-			idx += 1
+		p = order[j]
+		for k in range(j, idx, -1):
+			order[k] = order[k - 1]
+		order[idx] = p
+		idx += 1
 		return p
 
-	def pick_with_avoid(team_to_avoid: Optional[str]) -> Participant:
-		"""先読み窓から team_to_avoid を避けて1人選ぶ（なければ順番どおり）"""
+	def pop_next() -> "Participant":
 		nonlocal idx
+		p = order[idx]
+		idx += 1
+		return p
+
+	def remaining_group_counter() -> Counter:
+		c = Counter()
+		for p in order[idx:]:
+			g = _groupname(p)
+			if g:
+				c[g] += 1
+		return c
+
+	# --- a/b選択ロジック ---
+
+	def pick_a_feasible(target_half: int) -> "Participant":
+		"""
+		a（先手）：
+		- “別団体の相手が残る” 候補を優先（詰み回避）
+		- half_ok をできれば守る（ソフト）
+		"""
+		nonlocal idx
+		if idx >= len(order):
+			return bye
+
+		cnt = remaining_group_counter()
+
+		def feasible_group(g: Optional[str]) -> bool:
+			if not g:
+				return True
+			# g以外が残っていればOK
+			return (sum(cnt.values()) - cnt.get(g, 0)) > 0
+
+		def ok(j: int) -> bool:
+			g = _groupname(order[j])
+			return feasible_group(g) and half_ok(g, target_half)
+
 		w_end = min(idx + lookahead, len(order))
-		if team_to_avoid:
-			cands = [j for j in range(idx, w_end)
-					 if not (order[j].groupname and order[j].groupname == team_to_avoid)]
-			if cands:
-				j = rnd.choice(cands)
-				p = order[j]
-				for k in range(j, idx, -1):
-					order[k] = order[k - 1]
-				order[idx] = p
-				idx += 1
-				return p
+
+		# 1) 窓：feasible かつ half_ok
+		cands = [j for j in range(idx, w_end) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 2) 窓：feasible（half妥協）
+		cands = [j for j in range(idx, w_end) if feasible_group(_groupname(order[j]))]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 3) 全体：feasible かつ half_ok
+		cands = [j for j in range(idx, len(order)) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 4) 全体：feasible（half妥協）
+		cands = [j for j in range(idx, len(order)) if feasible_group(_groupname(order[j]))]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
 		return pop_next()
 
-	def _pair_fill_order(M: int, rnd) -> list[int]:
-		"""親ペア（2試合）を上↔下の順で埋めるための開始インデックス列を返す。
-	   例: M=8(=4ペア) → [0, 6, 2, 4]（= (0,1), (6,7), (2,3), (4,5)）"""
-		starts = list(range(0, M, 2))
-		seq = []
-		i, j = 0, len(starts) - 1
-		while i <= j:
-			seq.append(starts[i])
-			if i != j:
-				seq.append(starts[j])
-			i += 1
-			j -= 1
-		# ほんの少しだけランダム化（固定化回避）
-		if len(seq) > 1:
-			r = rnd.randrange(len(seq))
-			seq = seq[r:] + seq[:r]
-			if rnd.random() < 0.5:
-				seq.reverse()
-		return seq
+	def pick_b_avoid_group(hard_avoid: Optional[str], target_half: int) -> "Participant":
+		"""
+		b（相手）：
+		- hard_avoid（=aの団体）を回避（v1ハード）
+		- half_ok をできれば守る（ソフト）
+		"""
+		nonlocal idx
+		if idx >= len(order):
+			return bye
 
-	# 親ペア（2試合単位）で処理
-	for k in _pair_fill_order(M, rnd):
-		i0, i1 = k, k + 1
+		def ok(j: int) -> bool:
+			g = _groupname(order[j])
+			if hard_avoid and g == hard_avoid:
+				return False
+			return half_ok(g, target_half)
 
-		both_bye = (i0 in bye_pos) and (i1 in bye_pos)
-		if both_bye:
-			# 2回戦同団体を避けるよう、異なる団体の2人を優先して選ぶ
-			a = pop_next()
-			b = pick_with_avoid(a.groupname)
+		w_end = min(idx + lookahead, len(order))
 
-			# 両方BYEの2試合を埋める
-			result[i0] = (a, bye)
-			result[i1] = (b, bye)
+		# 1) 窓：hard回避 & half_ok
+		cands = [j for j in range(idx, w_end) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 2) 窓：hard回避（half妥協）
+		if hard_avoid:
+			cands = [j for j in range(idx, w_end) if _groupname(order[j]) != hard_avoid]
+			if cands:
+				return pull_to_front(rnd.choice(cands))
+		else:
+			# hard制約が無いときでも、窓でhalf_okを優先したい
+			cands = [j for j in range(idx, w_end) if half_ok(_groupname(order[j]), target_half)]
+			if cands:
+				return pull_to_front(rnd.choice(cands))
+
+		# 3) 全体：hard回避 & half_ok
+		cands = [j for j in range(idx, len(order)) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 4) 全体：hard回避（half妥協）
+		if hard_avoid:
+			cands = [j for j in range(idx, len(order)) if _groupname(order[j]) != hard_avoid]
+			if cands:
+				return pull_to_front(rnd.choice(cands))
+		else:
+			cands = [j for j in range(idx, len(order)) if half_ok(_groupname(order[j]), target_half)]
+			if cands:
+				return pull_to_front(rnd.choice(cands))
+
+		return pop_next()
+
+	def pick_soft_avoid(avoid: set[str], target_half: int) -> "Participant":
+		"""
+		ソフト選択：
+		- avoid（できれば避けたい団体集合）を避ける（v2/v3低減）
+		- half_ok もできれば守る
+		"""
+		nonlocal idx
+		if idx >= len(order):
+			return bye
+
+		def ok(j: int) -> bool:
+			g = _groupname(order[j])
+			return half_ok(g, target_half) and ((g is None) or (g not in avoid))
+
+		w_end = min(idx + lookahead, len(order))
+
+		# 1) 窓：avoid回避 & half_ok
+		cands = [j for j in range(idx, w_end) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 2) 窓：half_ok（avoid妥協）
+		cands = [j for j in range(idx, w_end) if half_ok(_groupname(order[j]), target_half)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 3) 全体：avoid回避 & half_ok
+		cands = [j for j in range(idx, len(order)) if ok(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 4) 全体：half_ok（avoid妥協）
+		cands = [j for j in range(idx, len(order)) if half_ok(_groupname(order[j]), target_half)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		return pop_next()
+
+	# --- 親ペア（2試合）単位で作る ---
+	parent_starts = list(range(0, M, 2))
+	rnd.shuffle(parent_starts)
+
+	for i0 in parent_starts:
+		i1 = i0 + 1
+		if i1 >= M:
+			i1 = i0
+
+		h0 = half_of_match(i0)
+		h1 = half_of_match(i1)
+
+		is_bye0 = (i0 in bye_pos)
+		is_bye1 = (i1 in bye_pos)
+
+		# 両方BYE試合枠（= (P,BYE) と (Q,BYE)）
+		if is_bye0 and is_bye1:
+			a = pick_a_feasible(h0)
+			b = pick_b_avoid_group(_groupname(a), h1)  # v1を避けつつhalfも意識
+			set_match(i0, a, bye)
+			set_match(i1, b, bye)
 			continue
 
-		# 片側だけBYE or BYEなし → 従来ロジック（各試合独立）
-		for i in (i0, i1):
-			if i >= M:  # 奇数保険
-				break
-			if result[i] is not None:
-				continue
+		# BYEなし親（=2試合とも実試合）
+		if (not is_bye0) and (not is_bye1):
+			# 1試合目（v1ハード）
+			a1 = pick_a_feasible(h0)
+			b1 = pick_b_avoid_group(_groupname(a1), h0)
+			set_match(i0, a1, b1)
 
-			if i in bye_pos:
-				a = pop_next()
-				result[i] = (a, bye)
-				continue
+			used = {g for g in (_groupname(a1), _groupname(b1)) if g}
 
-			# 非BYE試合：a を出して、b は先読みで a と同団体を避けて選ぶ
-			a = pop_next()
-			b = pick_with_avoid(a.groupname)
-			result[i] = (a, b)
+			# 2試合目：a2 は used をできれば避ける（ソフト）
+			a2 = pick_soft_avoid(used, h1)
+			b2 = pick_b_avoid_group(_groupname(a2), h1)  # v1ハード
+			set_match(i1, a2, b2)
+			continue
 
-	# None の保険処理
-	for i in range(M):
-		if result[i] is None:
-			result[i] = (bye, bye)
+		# 片BYE親：通常試合→BYE側を「通常試合の団体」を避けつつ置く
+		if is_bye0 and (not is_bye1):
+			# i1が通常試合
+			aN = pick_a_feasible(h1)
+			bN = pick_b_avoid_group(_groupname(aN), h1)
+			set_match(i1, aN, bN)
+
+			avoid = {g for g in (_groupname(aN), _groupname(bN)) if g}
+			aB = pick_soft_avoid(avoid, h0)
+			set_match(i0, aB, bye)
+			continue
+
+		if is_bye1 and (not is_bye0):
+			# i0が通常試合
+			aN = pick_a_feasible(h0)
+			bN = pick_b_avoid_group(_groupname(aN), h0)
+			set_match(i0, aN, bN)
+
+			avoid = {g for g in (_groupname(aN), _groupname(bN)) if g}
+			aB = pick_soft_avoid(avoid, h1)
+			set_match(i1, aB, bye)
+			continue
+
 	return result
 
 def _future_round_penalty(
@@ -308,7 +504,7 @@ def _future_round_penalty(
             return None
         if getattr(p, "name", None) == "BYE":
             return None
-        t = getattr(p, "groupname", None)
+        t = _groupname(p)
         return t if t else None
 
     # 団体ごとに葉インデックスを集計
@@ -369,7 +565,7 @@ def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int
             # BYEは無視
             if getattr(p, "name", None) == "BYE":
                 continue
-            t = getattr(p, "groupname", None)
+            t = _groupname(p)
             if not t:
                 continue
             counts[t][half] += 1
@@ -391,17 +587,16 @@ def _conflicts(pairs: List[Pair]) -> int:
 	- 1回戦の同一団体対戦: +1
 	- 2回戦の同一団体対戦: +1   ※(BYE,P) vs (BYE,Q) で, P と Q が同一団体: +3（2回戦で直接同一団体）
 	"""
-	def is_bye(x) -> bool:
-		return (x is None) or (getattr(x, "name", None) == "BYE")
 
 	v1 = 0 # 第一優先チェック
 	v2 = 0 # 第二優先チェック
+	v3 = 0 # 第三優先チェック
 
 	# 1) 1回戦の同一団体 → 可能な限り避ける
 	for a, b in pairs:
-		if not is_bye(a) and not is_bye(b):
-			ta = getattr(a, "groupname", None)
-			tb = getattr(b, "groupname", None)
+		if not _is_bye(a) and not _is_bye(b):
+			ta = _groupname(a)
+			tb = _groupname(b)
 			if ta and tb and ta == tb:
 				v1 += 1
 
@@ -410,31 +605,52 @@ def _conflicts(pairs: List[Pair]) -> int:
 		(aL, aR) = pairs[i]
 		(bL, bR) = pairs[i+1]
 
-		a_real = [x for x in (aL, aR) if not is_bye(x)]
-		b_real = [x for x in (bL, bR) if not is_bye(x)]
+		a_real = [x for x in (aL, aR) if not _is_bye(x)]
+		b_real = [x for x in (bL, bR) if not _is_bye(x)]
 
 		a_has_bye = (len(a_real) == 1)
 		b_has_bye = (len(b_real) == 1)
 
 		# (BYE,P) vs (BYE,Q): P と Q は2回戦で直接対戦 → 可能な限り避ける
 		if a_has_bye and b_has_bye and a_real and b_real:
-			tP, tQ = getattr(a_real[0], "groupname", None), getattr(b_real[0], "groupname", None)
+			tP, tQ = _groupname(a_real[0]), _groupname(b_real[0])
 			if tP and tQ and tP == tQ:
 				v1 += 1
 
-		# (BYE,P) vs (Q1,Q2): P は Q1/Q2 のどちらとも同一団体NG → 軽く避ける（10）
-		# (P1,P2) vs (Q1,Q2): P1/P2 は Q1/Q2 のどちらとも同一団体NG → 軽く避けるが、ある程度やむを得ない事とする（1）
+		# (BYE,P) vs (Q1,Q2): P は Q1/Q2 のどちらとも同一団体NG → 軽く避ける
+		# (P1,P2) vs (Q1,Q2): P1/P2 は Q1/Q2 のどちらとも同一団体NG → 軽く避けるが、ある程度やむを得ない事とする
 		else:
 			for P in a_real:
 				for Q in b_real:
-					tP, tQ = getattr(P, "groupname", None), getattr(Q, "groupname", None)
+					tP, tQ = _groupname(P), _groupname(Q)
 					if tP and tQ and tP == tQ:
 						if a_has_bye or b_has_bye:
-							v2 += 10
-						else:
 							v2 += 1
+						else:
+							v3 += 1
+	
+	# 3) 3回戦のチェック（親ノード=4試合ごと）
+	for i in range(0, len(pairs), 4):
+		end = min(i + 4, len(pairs))
+		if end - i < 4:
+			continue  # 4試合揃っていない端数ブロックは対象外
 
-	return (v1, v2, _half_distribution_penalty(pairs), _future_round_penalty(pairs))
+		bye_winners = []
+		for ii in range(i, end):
+			(aL, aR) = pairs[ii]
+			a_real = [x for x in (aL, aR) if not _is_bye(x)]
+			if len(a_real) == 1:
+				bye_winners.append(a_real[0])
+
+		# BYE勝ち上がりが多いブロックだけチェック
+		if 2 <= len(bye_winners) <= 4:   # 必要なら 3<=...<=4 に
+			for x in range(len(bye_winners) - 1):
+				for y in range(x + 1, len(bye_winners)):
+					tP, tQ = _groupname(bye_winners[x]), _groupname(bye_winners[y])
+					if tP and tQ and tP == tQ:
+						v3 += 1
+
+	return (v1, v2, v3)
 
 def make_first_round_pairs_quarter_even(
 	participants: List[Participant],
@@ -460,8 +676,9 @@ def make_first_round_pairs_quarter_even(
 	best_pairs = None
 	best_c1 = 10**9
 	best_c2 = 10**9
-	best_c3 = 10**11
+	best_c3 = 10**9
 	best_c4 = 10**11
+	best_c5 = 10**11
 
 	best_score = None
 	for r in range(max(1, restarts)):
@@ -473,13 +690,16 @@ def make_first_round_pairs_quarter_even(
 		rnd = random.Random(sub_seed)
 		pairs = _assign_pairs_with_bye_and_lookahead(order, M, bye_pos, lookahead, rnd)
 
-		c1, c2, c3, c4 = _conflicts(pairs)
-		if best_pairs == None or (c1, c2, c3, c4) < (best_c1, best_c2, best_c3, best_c4):
-			best_pairs, best_c1, best_c2, best_c3, best_c4 = pairs, c1, c2, c3, c4
-			if best_c1 == 0 and best_c2 == 0 and best_c3 == 0 and best_c4 == 0:   # これ以上はない
+		c1, c2, c3 = _conflicts(pairs)
+		c4 = _half_distribution_penalty(pairs)
+		c5 = _future_round_penalty(pairs)
+		
+		if best_pairs == None or (c1, c2, c3, c4, c5) < (best_c1, best_c2, best_c3, best_c4, best_c5):
+			best_pairs, best_c1, best_c2, best_c3, best_c4, best_c5 = pairs, c1, c2, c3, c4, c5
+			if best_c1 == 0 and best_c2 == 0 and best_c3 == 0 and best_c4 == 0 and best_c5 == 0:   # これ以上はない
 				break
 
-	print(f"c1={best_c1}, c2={best_c2}, c3={best_c3}, c4={best_c4}")
+	print(f"c1={best_c1}, c2={best_c2}, c3={best_c3}, c4={best_c4}, c5={best_c5}")
 	return best_pairs if best_pairs is not None else []
 
 # --------------------
@@ -791,16 +1011,51 @@ if __name__ == "__main__":
 		#Participant("磯野　渉", "いその　わたる", "深大寺"),
 		#Participant("松本　義弘", "まつもと　よしひろ", "深大寺"),
 		#Participant("國分　崇生", "こくぶん　たかお", "電通大"),
-		Participant("齋藤　美亜希", "さいとう　みつき", "中央会"),
-		Participant("上渡　勇人", "かみわたり　はやと", "中央会"),
-		Participant("塩幡　結依子", "しおはた　ゆいこ", "中央会"),
-		Participant("吉岡　侑哉", "よしおか　ゆうや", "大町"),
-		Participant("井上　公稀", "いのうえ　こうき", "聖武会"),
-		Participant("冨宇加　育実", "とみうか　いくみ", "聖武会"),
-		Participant("堂崎　菖瑚", "どうさき　しょうご", "聖武会"),
-		Participant("大塚　晴天", "おおつか　はるたか", "文荘館"),
-		Participant("土屋　美穏", "つちや　みお", "第七機動隊"),
-		Participant("伊藤　朱嶺", "いとう　あかね", "第七機動隊"),
+		
+		#Participant("齋藤　美亜希", "さいとう　みつき", "中央会"),
+		#Participant("上渡　勇人", "かみわたり　はやと", "中央会"),
+		#Participant("塩幡　結依子", "しおはた　ゆいこ", "中央会"),
+		#Participant("吉岡　侑哉", "よしおか　ゆうや", "大町"),
+		#Participant("井上　公稀", "いのうえ　こうき", "聖武会"),
+		#Participant("冨宇加　育実", "とみうか　いくみ", "聖武会"),
+		#Participant("堂崎　菖瑚", "どうさき　しょうご", "聖武会"),
+		#Participant("大塚　晴天", "おおつか　はるたか", "文荘館"),
+		#Participant("土屋　美穏", "つちや　みお", "第七機動隊"),
+		#Participant("伊藤　朱嶺", "いとう　あかね", "第七機動隊"),
+		
+		Participant("柳沢　信高", "やなぎさわ　のぶたか", "中央会"),
+		Participant("大濵　賢吾", "おおはま　けんご", "中央会"),
+		Participant("大濵　賢汰", "おおはま　けんた", "中央会"),
+		Participant("筒井　貫太", "つつい　かんた", "中央会"),
+		Participant("五十嵐  周作", "いがらし　しゅうさく", "中央会"),
+		Participant("眞野　仁", "まの　ひとし", "染地"),
+		Participant("東條　剛", "とうじょう　つよし", "染地"),
+		Participant("松浦　舜穏", "まつうら　しおん", "染地"),
+		Participant("三石　利明", "みついし　としあき", "染地"),
+		Participant("渡邉　正人", "わたなべ　まさと", "染地"),
+		Participant("佐藤　和", "さとう　やまと", "染地"),
+		Participant("五十畑　伊織", "いそはた　いおり", "大町"),
+		Participant("大武　凪希", "おおたけ　なぎ", "聖武会"),
+		Participant("大武　正治", "おおたけ　まさはる", "聖武会"),
+		Participant("内田　佑樹", "うちだ　ゆうき", "聖武会"),
+		Participant("寺田　直人", "てらだ　なおと", "聖武会"),
+		Participant("堤　文彦", "つつみ　ふみひこ", "聖武会"),
+		Participant("吉川　陽色", "よしかわ　ひいろ", "聖武会"),
+		Participant("大岡　克也", "おおおか　かつや", "深大寺"),
+		Participant("渡邉　英明", "わたなべ　ひであき", "深大寺"),
+		Participant("小林　泰宏", "こばやし　やすひろ", "深大寺"),
+		Participant("廣井　騰哉", "ひろい　とうや", "深大寺"),
+		Participant("神山　遼太郎", "かみやま　りょうたろう", "電通大"),
+		Participant("木村　琉人", "きむら　りゅうと", "電通大"),
+		Participant("増澤　日路", "ますざわ　ひろ", "電通大"),
+		Participant("鈴木　康太", "すずき　こうた", "電通大"),
+		Participant("清水　陽平", "しみず　ようへい", "電通大"),
+		Participant("井上　勇気", "いのうえ　ゆうき", "電通大"),
+		Participant("名久井　龍太郎", "なくい　りゅうたろう", "電通大"),
+		Participant("佐藤　海渡", "さとう　かいと", "電通大"),
+		Participant("永野　照幸", "ながの　てるゆき", "狛江高"),
+		Participant("仲　芳弘", "なか　よしひろ", "個人参加"),
+		Participant("冨田　大介", "とみた　だいすけ", "個人参加"),
 	]
 	
 	#rounds = build_full_bracket(sample, seed=1)
