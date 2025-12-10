@@ -656,7 +656,7 @@ def make_first_round_pairs_quarter_even(
 	participants: List[Participant],
 	seed: Optional[int] = None,
 	restarts: int = 1000,	 # 複数リスタート
-	lookahead: int = 6,	  # 先読み窓幅（団体衝突を回避）
+	lookahead: int = None, #6,	  # 先読み窓幅（団体衝突を回避）
 	max_local_iters: int = 2000,
 ) -> List[Pair]:
 	"""
@@ -670,6 +670,16 @@ def make_first_round_pairs_quarter_even(
 	M = T // 2
 	B = T - N
 	bye_pos = set(bye_positions_balanced_halves(M, B))
+
+	# 参加人数(N)に応じて団体衝突回避用変数を大きくする
+	if lookahead == None:
+		if N <= 32:
+			lookahead = 8
+		elif N <= 64:
+			lookahead = 10
+		else:
+			lookahead = 16
+	print(f"N={N}, lookahead={lookahead}")
 
 	import random
 	base_rnd = random.Random(seed)
@@ -1027,7 +1037,7 @@ if __name__ == "__main__":
 		Participant("大濵　賢吾", "おおはま　けんご", "中央会"),
 		Participant("大濵　賢汰", "おおはま　けんた", "中央会"),
 		Participant("筒井　貫太", "つつい　かんた", "中央会"),
-		Participant("五十嵐  周作", "いがらし　しゅうさく", "中央会"),
+		#Participant("五十嵐  周作", "いがらし　しゅうさく", "中央会"),
 		Participant("眞野　仁", "まの　ひとし", "染地"),
 		Participant("東條　剛", "とうじょう　つよし", "染地"),
 		Participant("松浦　舜穏", "まつうら　しおん", "染地"),
@@ -1056,6 +1066,74 @@ if __name__ == "__main__":
 		Participant("永野　照幸", "ながの　てるゆき", "狛江高"),
 		Participant("仲　芳弘", "なか　よしひろ", "個人参加"),
 		Participant("冨田　大介", "とみた　だいすけ", "個人参加"),
+
+		#Participant("2柳沢　信高", "やなぎさわ　のぶたか", "中央会"),
+		#Participant("2大濵　賢吾", "おおはま　けんご", "中央会"),
+		#Participant("2大濵　賢汰", "おおはま　けんた", "中央会"),
+		#Participant("2筒井　貫太", "つつい　かんた", "中央会"),
+		#Participant("2五十嵐  周作", "いがらし　しゅうさく", "中央会"),
+		#Participant("2眞野　仁", "まの　ひとし", "染地"),
+		#Participant("2東條　剛", "とうじょう　つよし", "染地"),
+		#Participant("2松浦　舜穏", "まつうら　しおん", "染地"),
+		#Participant("2三石　利明", "みついし　としあき", "染地"),
+		#Participant("2渡邉　正人", "わたなべ　まさと", "染地"),
+		#Participant("2佐藤　和", "さとう　やまと", "染地"),
+		#Participant("2五十畑　伊織", "いそはた　いおり", "大町"),
+		#Participant("2大武　凪希", "おおたけ　なぎ", "聖武会"),
+		#Participant("2大武　正治", "おおたけ　まさはる", "聖武会"),
+		#Participant("2内田　佑樹", "うちだ　ゆうき", "聖武会"),
+		#Participant("2寺田　直人", "てらだ　なおと", "聖武会"),
+		#Participant("2堤　文彦", "つつみ　ふみひこ", "聖武会"),
+		#Participant("2吉川　陽色", "よしかわ　ひいろ", "聖武会"),
+		#Participant("2大岡　克也", "おおおか　かつや", "深大寺"),
+		#Participant("2渡邉　英明", "わたなべ　ひであき", "深大寺"),
+		#Participant("2小林　泰宏", "こばやし　やすひろ", "深大寺"),
+		#Participant("2廣井　騰哉", "ひろい　とうや", "深大寺"),
+		#Participant("2神山　遼太郎", "かみやま　りょうたろう", "電通大"),
+		#Participant("2木村　琉人", "きむら　りゅうと", "電通大"),
+		#Participant("2増澤　日路", "ますざわ　ひろ", "電通大"),
+		#Participant("2鈴木　康太", "すずき　こうた", "電通大"),
+		#Participant("2清水　陽平", "しみず　ようへい", "電通大"),
+		#Participant("2井上　勇気", "いのうえ　ゆうき", "電通大"),
+		#Participant("2名久井　龍太郎", "なくい　りゅうたろう", "電通大"),
+		#Participant("2佐藤　海渡", "さとう　かいと", "電通大"),
+		#Participant("2永野　照幸", "ながの　てるゆき", "狛江高"),
+		#Participant("2仲　芳弘", "なか　よしひろ", "個人参加"),
+		#Participant("2冨田　大介", "とみた　だいすけ", "個人参加"),
+		#
+		#Participant("3柳沢　信高", "やなぎさわ　のぶたか", "中央会"),
+		#Participant("3大濵　賢吾", "おおはま　けんご", "中央会"),
+		#Participant("3大濵　賢汰", "おおはま　けんた", "中央会"),
+		#Participant("3筒井　貫太", "つつい　かんた", "中央会"),
+		#Participant("3五十嵐  周作", "いがらし　しゅうさく", "中央会"),
+		#Participant("3眞野　仁", "まの　ひとし", "染地"),
+		#Participant("3東條　剛", "とうじょう　つよし", "染地"),
+		#Participant("3松浦　舜穏", "まつうら　しおん", "染地"),
+		#Participant("3三石　利明", "みついし　としあき", "染地"),
+		#Participant("3渡邉　正人", "わたなべ　まさと", "染地"),
+		#Participant("3佐藤　和", "さとう　やまと", "染地"),
+		#Participant("3五十畑　伊織", "いそはた　いおり", "大町"),
+		#Participant("3大武　凪希", "おおたけ　なぎ", "聖武会"),
+		#Participant("3大武　正治", "おおたけ　まさはる", "聖武会"),
+		#Participant("3内田　佑樹", "うちだ　ゆうき", "聖武会"),
+		#Participant("3寺田　直人", "てらだ　なおと", "聖武会"),
+		#Participant("3堤　文彦", "つつみ　ふみひこ", "聖武会"),
+		#Participant("3吉川　陽色", "よしかわ　ひいろ", "聖武会"),
+		#Participant("3大岡　克也", "おおおか　かつや", "深大寺"),
+		#Participant("3渡邉　英明", "わたなべ　ひであき", "深大寺"),
+		#Participant("3小林　泰宏", "こばやし　やすひろ", "深大寺"),
+		#Participant("3廣井　騰哉", "ひろい　とうや", "深大寺"),
+		#Participant("3神山　遼太郎", "かみやま　りょうたろう", "電通大"),
+		#Participant("3木村　琉人", "きむら　りゅうと", "電通大"),
+		#Participant("3増澤　日路", "ますざわ　ひろ", "電通大"),
+		#Participant("3鈴木　康太", "すずき　こうた", "電通大"),
+		#Participant("3清水　陽平", "しみず　ようへい", "電通大"),
+		#Participant("3井上　勇気", "いのうえ　ゆうき", "電通大"),
+		#Participant("3名久井　龍太郎", "なくい　りゅうたろう", "電通大"),
+		#Participant("3佐藤　海渡", "さとう　かいと", "電通大"),
+		#Participant("3永野　照幸", "ながの　てるゆき", "狛江高"),
+		#Participant("3仲　芳弘", "なか　よしひろ", "個人参加"),
+		#Participant("3冨田　大介", "とみた　だいすけ", "個人参加"),
 	]
 	
 	#rounds = build_full_bracket(sample, seed=1)
