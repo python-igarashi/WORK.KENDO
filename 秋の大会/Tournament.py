@@ -119,61 +119,6 @@ def bye_positions_balanced_halves(M: int, B: int) -> list[int]:
 	return sorted(res)
 
 # --------------------
-# “同団体回避”を意識した並べ方（バケット→ラウンドロビン）
-# --------------------
-def diversified_order(participants: List[Participant], seed: Optional[int]) -> List[Participant]:
-	"""チーム分散しつつ、並びの規則性を弱める"""
-	import random
-	rnd = random.Random(seed)
-
-	# バケット化 & 各バケット内はシャッフル
-	buckets = defaultdict(list)
-	for p in participants:
-		buckets[p.groupname].append(p)
-	for k in buckets:
-		rnd.shuffle(buckets[k])
-
-	# ① チームを「人数降順」でグルーピングし、同サイズ内はランダム
-	by_size = defaultdict(list)
-	for groupname, members in buckets.items():
-		by_size[len(members)].append(groupname)
-
-	sizes = sorted(by_size.keys(), reverse=True)
-	bucket_keys: List[Optional[str]] = []
-	for s in sizes:
-		ks = by_size[s][:]
-		rnd.shuffle(ks)  # ← 同規模チームの順序をランダム化
-		bucket_keys.extend(ks)
-
-	# ② 先頭の開始オフセットもランダムに回転
-	if bucket_keys:
-		off = rnd.randrange(len(bucket_keys))
-		bucket_keys = bucket_keys[off:] + bucket_keys[:off]
-
-	# ③ 取り出し周回ごとに左右反転（serpentine）して規則性を崩す
-	order: List[Participant] = []
-	forward = True
-	while any(buckets[k] for k in bucket_keys):
-		keys = bucket_keys if forward else list(reversed(bucket_keys))
-		for k in keys:
-			if buckets[k]:
-				order.append(buckets[k].pop())
-		forward = not forward
-
-	# --- 上下偏り軽減のため、最終的な並びを上下で交互ミックス ---
-	mid = len(order) // 2
-	top = order[:mid]
-	bottom = order[mid:]
-	mixed = []
-	for i in range(max(len(top), len(bottom))):
-		if i < len(top):
-			mixed.append(top[i])
-		if i < len(bottom):
-			mixed.append(bottom[i])
-
-	return mixed
-
-# --------------------
 # 1回戦：四分割均等BYE割当（BYE vs BYE なし）
 # --------------------
 Pair = Tuple[Participant, Participant]
@@ -424,6 +369,11 @@ def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int
             # 1人だけの団体はどうしようもないのでペナルティなし
             continue
         diff = abs(top - bottom)
+
+        # 不可避な差は許容（奇数なら1、偶数なら0）
+        allowed = total % 2
+        excess = max(0, diff - allowed)
+
         penalty += (diff ** 2) * base_half
 
     return penalty
@@ -536,7 +486,7 @@ def make_first_round_pairs_quarter_even(
 	max_local_iters: int = 2000,
 ) -> List[Pair]:
 	"""
-	四分割BYE配分を維持しながら、同団体の初戦を強く回避。
+	先に「葉スロット（0..T-1）」へ選手を団体均等になるように割当てて、同団体の初戦を強く回避。
 	- diversified_order のランダム性は活かす
 	- 先読み割付 + 強化ローカル最適化
 	- 最良案（同団体カード数最小）を採用
@@ -571,7 +521,6 @@ def make_first_round_pairs_quarter_even(
 	for r in range(max(1, restarts)):
 		# 乱数をずらす（seed未指定なら毎回異なる）
 		sub_seed = base_rnd.getrandbits(64)
-		order = diversified_order(participants, sub_seed)
 
 		# 1) 先読みで割付
 		rnd = random.Random(sub_seed)
