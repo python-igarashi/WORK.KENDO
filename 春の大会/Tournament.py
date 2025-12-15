@@ -181,9 +181,6 @@ Pair = Tuple[Participant, Participant]
 from collections import Counter
 from typing import Optional
 
-from collections import Counter
-from typing import Optional
-
 def _assign_pairs_with_bye_and_lookahead(
 	order: list["Participant"],
 	M: int,
@@ -192,16 +189,17 @@ def _assign_pairs_with_bye_and_lookahead(
 	rnd,
 ) -> list[tuple["Participant", "Participant"]]:
 	"""
-	1回戦のペアを構築する（half分散対応版）。
+	1回戦のペアを構築する（half + quarter 分散対応版）。
 
 	目的：
-	- v1（初戦の同団体対戦）は可能な限り0（ハード最優先）
+	- v1（初戦の同一団体対戦）は可能な限り0（ハード最優先）
 	  -> b選びは同団体を窓→全体で探索して回避
-	  -> a選びも「相手(別団体)が残る」候補を優先して詰みを回避
+	  -> a選びも「別団体の相手が残る」候補を優先し詰みを回避
 	- half（上半分/下半分）への団体偏りを抑える（ソフト制約）
 	  -> 団体gの総人数 total[g] に対し、各halfへ ceil(total[g]/2) を超えて置かないよう努力
-	  -> どうしても無理なら妥協する
-	- v2/v3（親ペア内のクロス）は、2試合目のa側で used を避けるなど、できる範囲で抑える（ソフト）
+	- quarter（4分割）への団体偏りを抑える（ソフト制約）
+	  -> 団体gの総人数 total[g] に対し、各quarterへ ceil(total[g]/4) を超えて置かないよう努力
+	- v2/v3（親ペア内クロス）は、2試合目のa側で used を避けるなど、できる範囲で抑える（ソフト）
 	"""
 
 	bye = Participant("BYE", "BYE", "-")
@@ -209,36 +207,48 @@ def _assign_pairs_with_bye_and_lookahead(
 	# order読み取り位置
 	idx = 0
 
-	# resultは最初にBYEで埋める（後で _set_match で確定）
+	# resultは最初にBYEで埋める（後で set_match で確定）
 	result: list[tuple["Participant", "Participant"]] = [(bye, bye) for _ in range(M)]
 
-	# --- half分散（上半分/下半分）のソフト制約用 ---
+	# --- half/quarter 分散（ソフト制約）用 ---
 	total_by_group = Counter()
 	for p in order:
 		g = _groupname(p)
 		if g:
 			total_by_group[g] += 1
 
-	placed_half = {g: [0, 0] for g in total_by_group.keys()}  # [upper, lower]
+	placed_half = {g: [0, 0] for g in total_by_group.keys()}        # [upper, lower]
+	placed_quarter = {g: [0, 0, 0, 0] for g in total_by_group.keys()}  # q0..q3
 
 	def half_of_match(mi: int) -> int:
-		# 0=上半分, 1=下半分
 		return 0 if mi < (M // 2) else 1
 
+	Q = max(1, M // 4)  # 1/4区間の試合数
+	def quarter_of_match(mi: int) -> int:
+		# 0..3（端数は3側に寄せる）
+		return min(mi // Q, 3)
+
 	def half_ok(g: Optional[str], half: int) -> bool:
-		# BYE等は気にしない
 		if not g:
 			return True
-		# ceil(total/2) をそのhalfへのソフト上限とする
-		limit = (total_by_group[g] + 1) // 2
+		limit = (total_by_group[g] + 1) // 2  # ceil(total/2)
 		return placed_half[g][half] < limit
+
+	def quarter_ok(g: Optional[str], mi: int) -> bool:
+		if not g:
+			return True
+		limit = (total_by_group[g] + 3) // 4  # ceil(total/4)
+		q = quarter_of_match(mi)
+		return placed_quarter[g][q] < limit
 
 	def count_place(p: "Participant", mi: int) -> None:
 		g = _groupname(p)
 		if not g:
 			return
 		h = half_of_match(mi)
+		q = quarter_of_match(mi)
 		placed_half[g][h] += 1
+		placed_quarter[g][q] += 1
 
 	def set_match(mi: int, a: "Participant", b: "Participant") -> None:
 		result[mi] = (a, b)
@@ -272,12 +282,11 @@ def _assign_pairs_with_bye_and_lookahead(
 		return c
 
 	# --- a/b選択ロジック ---
-
-	def pick_a_feasible(target_half: int) -> "Participant":
+	def pick_a_feasible(target_half: int, target_match: int) -> "Participant":
 		"""
 		a（先手）：
 		- “別団体の相手が残る” 候補を優先（詰み回避）
-		- half_ok をできれば守る（ソフト）
+		- half_ok / quarter_ok をできれば守る（ソフト）
 		"""
 		nonlocal idx
 		if idx >= len(order):
@@ -288,48 +297,67 @@ def _assign_pairs_with_bye_and_lookahead(
 		def feasible_group(g: Optional[str]) -> bool:
 			if not g:
 				return True
-			# g以外が残っていればOK
 			return (sum(cnt.values()) - cnt.get(g, 0)) > 0
 
-		def ok(j: int) -> bool:
+		def ok_strict(j: int) -> bool:
+			g = _groupname(order[j])
+			return feasible_group(g) and half_ok(g, target_half) and quarter_ok(g, target_match)
+
+		def ok_half_only(j: int) -> bool:
 			g = _groupname(order[j])
 			return feasible_group(g) and half_ok(g, target_half)
 
 		w_end = min(idx + lookahead, len(order))
 
-		# 1) 窓：feasible かつ half_ok
-		cands = [j for j in range(idx, w_end) if ok(j)]
+		# 1) 窓：feasible & half & quarter
+		cands = [j for j in range(idx, w_end) if ok_strict(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 2) 窓：feasible（half妥協）
+		# 2) 窓：feasible & half（quarter妥協）
+		cands = [j for j in range(idx, w_end) if ok_half_only(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 3) 窓：feasible（half/quarter妥協）
 		cands = [j for j in range(idx, w_end) if feasible_group(_groupname(order[j]))]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 3) 全体：feasible かつ half_ok
-		cands = [j for j in range(idx, len(order)) if ok(j)]
+		# 4) 全体：feasible & half & quarter
+		cands = [j for j in range(idx, len(order)) if ok_strict(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 4) 全体：feasible（half妥協）
+		# 5) 全体：feasible & half（quarter妥協）
+		cands = [j for j in range(idx, len(order)) if ok_half_only(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 6) 全体：feasible（half/quarter妥協）
 		cands = [j for j in range(idx, len(order)) if feasible_group(_groupname(order[j]))]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
 		return pop_next()
 
-	def pick_b_avoid_group(hard_avoid: Optional[str], target_half: int) -> "Participant":
+	def pick_b_avoid_group(hard_avoid: Optional[str], target_half: int, target_match: int) -> "Participant":
 		"""
 		b（相手）：
 		- hard_avoid（=aの団体）を回避（v1ハード）
-		- half_ok をできれば守る（ソフト）
+		- half_ok / quarter_ok をできれば守る（ソフト）
 		"""
 		nonlocal idx
 		if idx >= len(order):
 			return bye
 
-		def ok(j: int) -> bool:
+		def ok_strict(j: int) -> bool:
+			g = _groupname(order[j])
+			if hard_avoid and g == hard_avoid:
+				return False
+			return half_ok(g, target_half) and quarter_ok(g, target_match)
+
+		def ok_half_only(j: int) -> bool:
 			g = _groupname(order[j])
 			if hard_avoid and g == hard_avoid:
 				return False
@@ -337,72 +365,94 @@ def _assign_pairs_with_bye_and_lookahead(
 
 		w_end = min(idx + lookahead, len(order))
 
-		# 1) 窓：hard回避 & half_ok
-		cands = [j for j in range(idx, w_end) if ok(j)]
+		# 1) 窓：hard回避 & half & quarter
+		cands = [j for j in range(idx, w_end) if ok_strict(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 2) 窓：hard回避（half妥協）
+		# 2) 窓：hard回避 & half（quarter妥協）
+		cands = [j for j in range(idx, w_end) if ok_half_only(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 3) 窓：hard回避（half/quarter妥協）
 		if hard_avoid:
 			cands = [j for j in range(idx, w_end) if _groupname(order[j]) != hard_avoid]
 			if cands:
 				return pull_to_front(rnd.choice(cands))
 		else:
-			# hard制約が無いときでも、窓でhalf_okを優先したい
-			cands = [j for j in range(idx, w_end) if half_ok(_groupname(order[j]), target_half)]
-			if cands:
-				return pull_to_front(rnd.choice(cands))
+			# hardが無い場合でも一応half/quarter優先を試す（上で拾えなければ妥協）
+			pass
 
-		# 3) 全体：hard回避 & half_ok
-		cands = [j for j in range(idx, len(order)) if ok(j)]
+		# 4) 全体：hard回避 & half & quarter
+		cands = [j for j in range(idx, len(order)) if ok_strict(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 4) 全体：hard回避（half妥協）
+		# 5) 全体：hard回避 & half（quarter妥協）
+		cands = [j for j in range(idx, len(order)) if ok_half_only(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 6) 全体：hard回避（half/quarter妥協）
 		if hard_avoid:
 			cands = [j for j in range(idx, len(order)) if _groupname(order[j]) != hard_avoid]
-			if cands:
-				return pull_to_front(rnd.choice(cands))
-		else:
-			cands = [j for j in range(idx, len(order)) if half_ok(_groupname(order[j]), target_half)]
 			if cands:
 				return pull_to_front(rnd.choice(cands))
 
 		return pop_next()
 
-	def pick_soft_avoid(avoid: set[str], target_half: int) -> "Participant":
+	def pick_soft_avoid(avoid: set[str], target_half: int, target_match: int) -> "Participant":
 		"""
 		ソフト選択：
 		- avoid（できれば避けたい団体集合）を避ける（v2/v3低減）
-		- half_ok もできれば守る
+		- half_ok / quarter_ok もできれば守る
 		"""
 		nonlocal idx
 		if idx >= len(order):
 			return bye
 
-		def ok(j: int) -> bool:
+		def ok_strict(j: int) -> bool:
+			g = _groupname(order[j])
+			return half_ok(g, target_half) and quarter_ok(g, target_match) and ((g is None) or (g not in avoid))
+
+		def ok_half_only(j: int) -> bool:
 			g = _groupname(order[j])
 			return half_ok(g, target_half) and ((g is None) or (g not in avoid))
 
+		def ok_place_only(j: int) -> bool:
+			g = _groupname(order[j])
+			return half_ok(g, target_half) and quarter_ok(g, target_match)
+
 		w_end = min(idx + lookahead, len(order))
 
-		# 1) 窓：avoid回避 & half_ok
-		cands = [j for j in range(idx, w_end) if ok(j)]
+		# 1) 窓：avoid回避 & half & quarter
+		cands = [j for j in range(idx, w_end) if ok_strict(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 2) 窓：half_ok（avoid妥協）
-		cands = [j for j in range(idx, w_end) if half_ok(_groupname(order[j]), target_half)]
+		# 2) 窓：avoid回避 & half（quarter妥協）
+		cands = [j for j in range(idx, w_end) if ok_half_only(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 3) 全体：avoid回避 & half_ok
-		cands = [j for j in range(idx, len(order)) if ok(j)]
+		# 3) 窓：half & quarter（avoid妥協）
+		cands = [j for j in range(idx, w_end) if ok_place_only(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
-		# 4) 全体：half_ok（avoid妥協）
-		cands = [j for j in range(idx, len(order)) if half_ok(_groupname(order[j]), target_half)]
+		# 4) 全体：avoid回避 & half & quarter
+		cands = [j for j in range(idx, len(order)) if ok_strict(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 5) 全体：avoid回避 & half（quarter妥協）
+		cands = [j for j in range(idx, len(order)) if ok_half_only(j)]
+		if cands:
+			return pull_to_front(rnd.choice(cands))
+
+		# 6) 全体：half & quarter（avoid妥協）
+		cands = [j for j in range(idx, len(order)) if ok_place_only(j)]
 		if cands:
 			return pull_to_front(rnd.choice(cands))
 
@@ -425,8 +475,8 @@ def _assign_pairs_with_bye_and_lookahead(
 
 		# 両方BYE試合枠（= (P,BYE) と (Q,BYE)）
 		if is_bye0 and is_bye1:
-			a = pick_a_feasible(h0)
-			b = pick_b_avoid_group(_groupname(a), h1)  # v1を避けつつhalfも意識
+			a = pick_a_feasible(h0, i0)
+			b = pick_b_avoid_group(_groupname(a), h1, i1)  # v1を避けつつhalf/quarterも意識
 			set_match(i0, a, bye)
 			set_match(i1, b, bye)
 			continue
@@ -434,38 +484,38 @@ def _assign_pairs_with_bye_and_lookahead(
 		# BYEなし親（=2試合とも実試合）
 		if (not is_bye0) and (not is_bye1):
 			# 1試合目（v1ハード）
-			a1 = pick_a_feasible(h0)
-			b1 = pick_b_avoid_group(_groupname(a1), h0)
+			a1 = pick_a_feasible(h0, i0)
+			b1 = pick_b_avoid_group(_groupname(a1), h0, i0)
 			set_match(i0, a1, b1)
 
 			used = {g for g in (_groupname(a1), _groupname(b1)) if g}
 
 			# 2試合目：a2 は used をできれば避ける（ソフト）
-			a2 = pick_soft_avoid(used, h1)
-			b2 = pick_b_avoid_group(_groupname(a2), h1)  # v1ハード
+			a2 = pick_soft_avoid(used, h1, i1)
+			b2 = pick_b_avoid_group(_groupname(a2), h1, i1)  # v1ハード
 			set_match(i1, a2, b2)
 			continue
 
 		# 片BYE親：通常試合→BYE側を「通常試合の団体」を避けつつ置く
 		if is_bye0 and (not is_bye1):
 			# i1が通常試合
-			aN = pick_a_feasible(h1)
-			bN = pick_b_avoid_group(_groupname(aN), h1)
+			aN = pick_a_feasible(h1, i1)
+			bN = pick_b_avoid_group(_groupname(aN), h1, i1)
 			set_match(i1, aN, bN)
 
 			avoid = {g for g in (_groupname(aN), _groupname(bN)) if g}
-			aB = pick_soft_avoid(avoid, h0)
+			aB = pick_soft_avoid(avoid, h0, i0)
 			set_match(i0, aB, bye)
 			continue
 
 		if is_bye1 and (not is_bye0):
 			# i0が通常試合
-			aN = pick_a_feasible(h0)
-			bN = pick_b_avoid_group(_groupname(aN), h0)
+			aN = pick_a_feasible(h0, i0)
+			bN = pick_b_avoid_group(_groupname(aN), h0, i0)
 			set_match(i0, aN, bN)
 
 			avoid = {g for g in (_groupname(aN), _groupname(bN)) if g}
-			aB = pick_soft_avoid(avoid, h1)
+			aB = pick_soft_avoid(avoid, h1, i1)
 			set_match(i1, aB, bye)
 			continue
 
@@ -581,6 +631,35 @@ def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int
 
     return penalty
 
+def _quarter_distribution_penalty(pairs: List[Pair], base: int = 10**7) -> int:
+    M = len(pairs)
+    q = M // 4
+
+    # group -> [q0, q1, q2, q3]
+    counts = defaultdict(lambda: [0, 0, 0, 0])
+
+    for i, (a, b) in enumerate(pairs):
+        qi = min(i // q, 3)
+        for p in (a, b):
+            if _is_bye(p):
+                continue
+            g = _groupname(p)
+            if g:
+                counts[g][qi] += 1
+
+    penalty = 0
+    for g, qs in counts.items():
+        total = sum(qs)
+        if total <= 1:
+            continue
+        max_q = max(qs)
+        # 4人なら「各quarter 1人」が理想
+        ideal = math.ceil(total / 4)
+        if max_q > ideal:
+            penalty += (max_q - ideal) ** 2 * base
+
+    return penalty
+
 def _conflicts(pairs: List[Pair]) -> int:
 	"""
 	衝突スコアを返す。
@@ -689,6 +768,7 @@ def make_first_round_pairs_quarter_even(
 	best_c3 = 10**9
 	best_c4 = 10**11
 	best_c5 = 10**11
+	best_c6 = 10**11
 
 	best_score = None
 	for r in range(max(1, restarts)):
@@ -702,23 +782,25 @@ def make_first_round_pairs_quarter_even(
 
 		c1, c2, c3 = _conflicts(pairs)
 		c4 = _half_distribution_penalty(pairs)
-		c5 = _future_round_penalty(pairs)
+		c5 = _quarter_distribution_penalty(pairs)
+		c6 = _future_round_penalty(pairs)
 		
-		if best_pairs == None or (c1, c2, c3, c4, c5) < (best_c1, best_c2, best_c3, best_c4, best_c5):
-			best_pairs, best_c1, best_c2, best_c3, best_c4, best_c5 = pairs, c1, c2, c3, c4, c5
-			if best_c1 == 0 and best_c2 == 0 and best_c3 == 0 and best_c4 == 0 and best_c5 == 0:   # これ以上はない
+		if best_pairs == None or (c1, c2, c3, c4, c5, c6) < (best_c1, best_c2, best_c3, best_c4, best_c5, best_c6):
+			best_pairs, best_c1, best_c2, best_c3, best_c4, best_c5, best_c6 = pairs, c1, c2, c3, c4, c5, c6
+			if best_c1 == 0 and best_c2 == 0 and best_c3 == 0 and best_c4 == 0 and best_c5 == 0 and best_c6 == 0:   # これ以上はない
 				break
 
-	print(f"c1={best_c1}, c2={best_c2}, c3={best_c3}, c4={best_c4}, c5={best_c5}")
+	print(f"c1={best_c1}, c2={best_c2}, c3={best_c3}, c4={best_c4}, c5={best_c5}, c6={best_c6}")
 	return best_pairs if best_pairs is not None else []
 
 # --------------------
 # ブラケット構築（決勝まで）
 # --------------------
 def build_full_bracket(participants: List[Participant], seed: Optional[int] = None) -> List[Round]:
-	first_pairs = make_first_round_pairs_quarter_even(participants, seed=seed, restarts=1000)
+	restarts = 1000 if len(participants) < 32 else 5000
+	first_pairs = make_first_round_pairs_quarter_even(participants, seed=seed, restarts=restarts)
+	
 	rounds: List[Round] = []
-
 	r0: Round = []
 	for (a, b) in first_pairs:
 		m = Match(left=a, right=b, winner=None)
