@@ -123,9 +123,6 @@ def bye_positions_balanced_halves(M: int, B: int) -> list[int]:
 # --------------------
 Pair = Tuple[Participant, Participant]
 
-from collections import Counter
-from typing import Optional
-
 def _allocate_leaf_slots_by_group(
 	participants: list[Participant],
 	T: int,
@@ -507,7 +504,6 @@ def make_first_round_pairs_quarter_even(
 			lookahead = 16
 	print(f"N={N}, lookahead={lookahead}")
 
-	import random
 	base_rnd = random.Random(seed)
 	best_pairs = None
 	best_c1 = 10**9
