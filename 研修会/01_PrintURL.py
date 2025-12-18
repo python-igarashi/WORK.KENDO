@@ -12,10 +12,10 @@ SCOPES = [
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 
-for groupname in Defines.l_groupname:
+for groupname in Defines.l_groupname + ["記入例", "集計", "テンプレート"]:
 	filename = Defines.filename_header + "." + groupname
 	
-	# 指定フォルダ内でファイル名を検索
+	# 指定フォルダ内で団体のファイル名を検索
 	query = f"'{Defines.drive_id}' in parents and name = '{filename}' and trashed = false"
 	results = drive_service.files().list(q=query, fields="files(id, name, webViewLink)").execute()
 	files = results.get('files', [])
