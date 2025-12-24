@@ -496,12 +496,17 @@ def make_first_round_pairs_quarter_even(
 
 	# 参加人数(N)に応じて団体衝突回避用変数を大きくする
 	if lookahead == None:
-		if N <= 32:
-			lookahead = 8
-		elif N <= 64:
-			lookahead = 10
-		else:
-			lookahead = 16
+		# Nの範囲ごとの値（ceil切り上げ + 下限6/上限14）
+		#  1..11     -> 6
+		# 12..16     -> 7
+		# 17..22     -> 8
+		# 23..32     -> 9
+		# 33..45     -> 10
+		# 46..64     -> 11
+		# 65..90     -> 12
+		# 91..128    -> 13
+		# 129..      -> 14
+		lookahead = int(max(6, min(14, math.ceil(2 * math.log2(N) - 1))))
 	print(f"N={N}, lookahead={lookahead}")
 
 	base_rnd = random.Random(seed)
