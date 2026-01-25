@@ -72,8 +72,10 @@ def bye_positions_balanced_halves(M: int, B: int) -> list[int]:
 	q_byes = [0, 0, 0, 0]  # [Q1,Q2,Q3,Q4]
 
 	def split_into_two(total_byes: int, size_a: int, size_b: int) -> tuple[int, int]:
-		a = total_byes // 2
+		# 端数はまず a 側に持たせる
+		a = (total_byes + 1) // 2
 		b = total_byes - a
+		
 		# 端数配分の調整：広い方に多めを寄せる
 		if size_a < size_b and a > b:
 			a, b = b, a
@@ -261,148 +263,148 @@ def _allocate_leaf_slots_by_group(
 	return slots  # type: ignore
 
 def _future_round_penalty(
-    pairs: List[Pair],
-    base: int = 10**8,
-    decay: int = 50,
-    exclude_final: bool = True
+	pairs: List[Pair],
+	base: int = 10**8,
+	decay: int = 50,
+	exclude_final: bool = True
 ) -> int:
-    """
-    “実際の対戦可能性” に対するペナルティ
-      - 1回戦の葉を 0..T-1 に番号付け
-      - 各団体について、所属選手の葉インデックスの全ペアを調べる
-      - その2人が最短で当たり得るラウンド r を計算し、
-        base / decay^r の重みでペナルティ加算
-      - exclude_final=True の場合、決勝で初めて当たるペアは無視
-    """
+	"""
+	“実際の対戦可能性” に対するペナルティ
+	  - 1回戦の葉を 0..T-1 に番号付け
+	  - 各団体について、所属選手の葉インデックスの全ペアを調べる
+	  - その2人が最短で当たり得るラウンド r を計算し、
+		base / decay^r の重みでペナルティ加算
+	  - exclude_final=True の場合、決勝で初めて当たるペアは無視
+	"""
 
-    # 1回戦の葉インデックス割り当て
-    # Match i の left -> idx = 2*i, right -> idx = 2*i+1
-    slots: List[Slot] = []
-    for m in pairs:
-        slots.append(m[0])
-        slots.append(m[1])
+	# 1回戦の葉インデックス割り当て
+	# Match i の left -> idx = 2*i, right -> idx = 2*i+1
+	slots: List[Slot] = []
+	for m in pairs:
+		slots.append(m[0])
+		slots.append(m[1])
 
-    T = len(slots)               # 葉の総数（2のべきのはず）
-    if T == 0:
-        return 0
+	T = len(slots)  # 葉の総数（2のべきのはず）
+	if T == 0:
+		return 0
 
-    max_round = int(math.log2(T)) - 1  # 0=1回戦, 1=2回戦,..., max_round=決勝
+	max_round = int(math.log2(T)) - 1  # 0=1回戦, 1=2回戦,..., max_round=決勝
 
-    def team_of(p) -> Optional[str]:
-        if p is None:
-            return None
-        if getattr(p, "name", None) == "BYE":
-            return None
-        t = _groupname(p)
-        return t if t else None
+	def team_of(p) -> Optional[str]:
+		if p is None:
+			return None
+		if getattr(p, "name", None) == "BYE":
+			return None
+		t = _groupname(p)
+		return t if t else None
 
-    # 団体ごとに葉インデックスを集計
-    team_to_indices: dict[str, List[int]] = defaultdict(list)
-    for idx, p in enumerate(slots):
-        t = team_of(p)
-        if t:
-            team_to_indices[t].append(idx)
+	# 団体ごとに葉インデックスを集計
+	team_to_indices: dict[str, List[int]] = defaultdict(list)
+	for idx, p in enumerate(slots):
+		t = team_of(p)
+		if t:
+			team_to_indices[t].append(idx)
 
-    total_penalty = 0
+	total_penalty = 0
 
-    # 各団体について、所属選手のペアごとに最短対戦ラウンドを評価
-    for t, indices in team_to_indices.items():
-        n = len(indices)
-        if n <= 1:
-            continue  # 1人では同団体対戦は起こらない
+	# 各団体について、所属選手のペアごとに最短対戦ラウンドを評価
+	for t, indices in team_to_indices.items():
+		n = len(indices)
+		if n <= 1:
+			continue  # 1人では同団体対戦は起こらない
 
-        for a_idx in range(n):
-            i = indices[a_idx]
-            for b_idx in range(a_idx + 1, n):
-                j = indices[b_idx]
+		for a_idx in range(n):
+			i = indices[a_idx]
+			for b_idx in range(a_idx + 1, n):
+				j = indices[b_idx]
 
-                x = i ^ j
-                if x == 0:
-                    # 同じスロットにいることは通常ないが、念のため
-                    continue
+				x = i ^ j
+				if x == 0:
+					# 同じスロットにいることは通常ないが、念のため
+					continue
 
-                r = int(math.log2(x))  # 0=1回戦, 1=2回戦,...
+				r = int(math.log2(x))  # 0=1回戦, 1=2回戦,...
 
-                # 決勝のみペナルティ除外したい場合
-                if exclude_final and r == max_round:
-                    continue
+				# 決勝のみペナルティ除外したい場合
+				if exclude_final and r == max_round:
+					continue
 
-                weight = base // (decay ** r)
-                if weight <= 0:
-                    weight = 1
-                total_penalty += weight
+				weight = base // (decay ** r)
+				if weight <= 0:
+					weight = 1
+				total_penalty += weight
 
-    return total_penalty
+	return total_penalty
 
 def _half_distribution_penalty(pairs: List[Pair], base_half: int = 10**7) -> int:
-    """
-    各団体が「上の山」と「下の山」にどれくらい均等に分かれているかのペナルティ。
-      - 試合 index < M/2 を上の山
-      - index >= M/2 を下の山と見なす
-      - 各団体ごとに abs(top - bottom)^2 * base_half を加算
-      - その団体の参加人数が1人だけの場合はペナルティ0（分けようがないので）
-    """
-    M = len(pairs)
-    half_matches = M // 2
+	"""
+	各団体が「上の山」と「下の山」にどれくらい均等に分かれているかのペナルティ。
+	  - 試合 index < M/2 を上の山
+	  - index >= M/2 を下の山と見なす
+	  - 各団体ごとに abs(top - bottom)^2 * base_half を加算
+	  - その団体の参加人数が1人だけの場合はペナルティ0（分けようがないので）
+	"""
+	M = len(pairs)
+	half_matches = M // 2
 
-    # groupname -> [top_count, bottom_count]
-    counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+	# groupname -> [top_count, bottom_count]
+	counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
 
-    for i, (a, b) in enumerate(pairs):
-        half = 0 if i < half_matches else 1  # 0: 上の山, 1: 下の山
-        for p in (a, b):
-            # BYEは無視
-            if getattr(p, "name", None) == "BYE":
-                continue
-            t = _groupname(p)
-            if not t:
-                continue
-            counts[t][half] += 1
+	for i, (a, b) in enumerate(pairs):
+		half = 0 if i < half_matches else 1  # 0: 上の山, 1: 下の山
+		for p in (a, b):
+			# BYEは無視
+			if getattr(p, "name", None) == "BYE":
+				continue
+			t = _groupname(p)
+			if not t:
+				continue
+			counts[t][half] += 1
 
-    penalty = 0
-    for t, (top, bottom) in counts.items():
-        total = top + bottom
-        if total <= 1:
-            # 1人だけの団体はどうしようもないのでペナルティなし
-            continue
-        diff = abs(top - bottom)
+	penalty = 0
+	for t, (top, bottom) in counts.items():
+		total = top + bottom
+		if total <= 1:
+			# 1人だけの団体はどうしようもないのでペナルティなし
+			continue
+		diff = abs(top - bottom)
 
-        # 不可避な差は許容（奇数なら1、偶数なら0）
-        allowed = total % 2
-        excess = max(0, diff - allowed)
+		# 不可避な差は許容（奇数なら1、偶数なら0）
+		allowed = total % 2
+		excess = max(0, diff - allowed)
 
-        penalty += (diff ** 2) * base_half
+		penalty += (diff ** 2) * base_half
 
-    return penalty
+	return penalty
 
 def _quarter_distribution_penalty(pairs: List[Pair], base: int = 10**7) -> int:
-    M = len(pairs)
-    q = M // 4
+	M = len(pairs)
+	q = M // 4
 
-    # group -> [q0, q1, q2, q3]
-    counts = defaultdict(lambda: [0, 0, 0, 0])
+	# group -> [q0, q1, q2, q3]
+	counts = defaultdict(lambda: [0, 0, 0, 0])
 
-    for i, (a, b) in enumerate(pairs):
-        qi = min(i // q, 3)
-        for p in (a, b):
-            if _is_bye(p):
-                continue
-            g = _groupname(p)
-            if g:
-                counts[g][qi] += 1
+	for i, (a, b) in enumerate(pairs):
+		qi = min(i // q, 3)
+		for p in (a, b):
+			if _is_bye(p):
+				continue
+			g = _groupname(p)
+			if g:
+				counts[g][qi] += 1
 
-    penalty = 0
-    for g, qs in counts.items():
-        total = sum(qs)
-        if total <= 1:
-            continue
-        max_q = max(qs)
-        # 4人なら「各quarter 1人」が理想
-        ideal = math.ceil(total / 4)
-        if max_q > ideal:
-            penalty += (max_q - ideal) ** 2 * base
+	penalty = 0
+	for g, qs in counts.items():
+		total = sum(qs)
+		if total <= 1:
+			continue
+		max_q = max(qs)
+		# 4人なら「各quarter 1人」が理想
+		ideal = math.ceil(total / 4)
+		if max_q > ideal:
+			penalty += (max_q - ideal) ** 2 * base
 
-    return penalty
+	return penalty
 
 def _conflicts(pairs: List[Pair]) -> int:
 	"""
@@ -497,15 +499,15 @@ def make_first_round_pairs_quarter_even(
 	# 参加人数(N)に応じて団体衝突回避用変数を大きくする
 	if lookahead == None:
 		# Nの範囲ごとの値（ceil切り上げ + 下限6/上限14）
-		#  1..11     -> 6
-		# 12..16     -> 7
-		# 17..22     -> 8
-		# 23..32     -> 9
-		# 33..45     -> 10
-		# 46..64     -> 11
-		# 65..90     -> 12
-		# 91..128    -> 13
-		# 129..      -> 14
+		#  1..11  -> 6
+		# 12..16  -> 7
+		# 17..22  -> 8
+		# 23..32  -> 9
+		# 33..45  -> 10
+		# 46..64  -> 11
+		# 65..90  -> 12
+		# 91..128 -> 13
+		# 129..   -> 14
 		lookahead = int(max(6, min(14, math.ceil(2 * math.log2(N) - 1))))
 	print(f"N={N}, lookahead={lookahead}")
 
