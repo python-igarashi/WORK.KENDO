@@ -85,11 +85,44 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 #   この値によって、作成されるトーナメント抽選結果が決定される。
 #   特定の部門だけ値を変更することもできる。
 #   毎回ランダムに作成したい場合はseed=Noneとする。
+import random
+from datetime import datetime
+
+seed, seed_time = Defines.read_tournament_no_logfile()[-1]
+print( "------------------")
+print(f"現在の抽選結果番号")
+print(f"[{seed}]")
+print(f"(発行日時 = {seed_time})")
+print( "------------------")
+print("")
+print("A.現在の抽選結果番号のまま実行する場合は、リターンキーを押してください。")
+print("B.新しい番号(ランダム)にする場合は、new あるいは NEW と入力後リターンキーを押してください。")
+print("C.抽選結果番号を任意に指定する場合は、数値(9桁以内)を入力後リターンキーを押してください。")
+
+user_input = input("> ").strip()
+if user_input == "":
+	print("現在の抽選結果番号を使用します。")
+elif user_input.lower() == "new":
+	print("新しい抽選結果番号（ランダム）を生成します。")
+	seed = random.randint(100000000, 999999999)
+	seed_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+elif len(user_input) <= 9 and user_input.isdigit():
+	seed = int(user_input)
+	seed_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+else:
+	print("入力が不正です。プログラムを終了します。\n")
+	import sys
+	sys.exit(0)
+
+print(f"抽選結果番号 [{seed}] で実行します。")
+Defines.save_tournament_no_logfile(seed, seed_time) # 抽選結果番号をファイルに保存
+
 
 match_date = "2025.6.8"
-seed = 20251026 * 10 + 1
 
 Create("小学生の部",   seed=seed, match_date=match_date, match_place1="第一試合場", init_workbook=True)
 Create("中学生の部",   seed=seed, match_date=match_date, match_place1="第二試合場")
 Create("一般女子の部", seed=seed, match_date=match_date, match_place1="第一試合場(チーム番号1～4)",  match_place2="第二試合場(チーム番号5～9)")
 Create("一般の部",     seed=seed, match_date=match_date, match_place1="第一試合場(チーム番号1～16)", match_place2="第二試合場(チーム番号17～32)")
+
+print(f"抽選結果番号 [{seed}] での抽選を終了しました。")

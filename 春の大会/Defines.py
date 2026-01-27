@@ -93,6 +93,33 @@ download_folder = ".\\DownloadTSV"
 # トーナメントデータファイルのフォルダ
 tournament_folder = ".\\TournamentFiles"
 
+# トーナメント抽選結果番号ログファイル
+tournament_no_logfile = ".\\tournament_no.log"
+def read_tournament_no_logfile():
+	import csv
+	result = []
+	try:
+		with open(tournament_no_logfile, newline='', encoding='utf-8') as logfile:
+			reader = csv.reader(logfile, delimiter=',')
+			for row in reader:
+				if len(row) == 2 and row[0].isdigit():
+					result.append([ row[0], row[1] ]) # [抽選結果番号, 日時]
+	except:
+		print("抽選結果番号ログファイルの読込中に例外が発生しました。")
+		pass
+	if len(result) == 0:
+		result.append(["100000000", "2000/01/01 00:00:00"])
+	return result
+
+def save_tournament_no_logfile(seed, seed_time):
+	lines = read_tournament_no_logfile()
+	if lines[-1][0] != seed:
+		lines.append([ seed, seed_time ])
+	lines = lines[-10:]
+	with open(tournament_no_logfile, "w", encoding="utf-8") as logfile:
+		for line in lines:
+			logfile.write(f"{line[0]},{line[1]}\n")
+
 # サマリデータの列数を一定に保つためのメソッド
 def pad_list(l_value, length):
 	return l_value + [""] * max(0, length - len(l_value))
