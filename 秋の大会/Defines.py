@@ -105,7 +105,7 @@ def read_tournament_no_logfile():
 				if len(row) == 2 and row[0].isdigit():
 					result.append([ row[0], row[1] ]) # [抽選結果番号, 日時]
 	except:
-		print("抽選結果番号ログファイルの読込中に例外が発生しました。")
+		print("抽選結果番号ログファイルの読込をスキップしました。")
 		pass
 	if len(result) == 0:
 		result.append(["100000000", "2000/01/01 00:00:00"])
