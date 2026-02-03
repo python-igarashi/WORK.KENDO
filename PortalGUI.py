@@ -160,7 +160,7 @@ class PortalGUI(tk.Tk):
 
     def _worker_run(self, event_dir, script, stdin_text):
         try:
-            cmd = [sys.executable, script]
+            cmd = [sys.executable, "-u", script]
             proc = subprocess.Popen(
                 cmd,
                 cwd=os.path.join(os.getcwd(), event_dir),
@@ -170,6 +170,7 @@ class PortalGUI(tk.Tk):
                 text=True,
                 encoding=locale.getpreferredencoding(False),
                 errors="replace",
+                bufsize=1,
             )
             if stdin_text is not None:
                 proc.stdin.write(stdin_text)
