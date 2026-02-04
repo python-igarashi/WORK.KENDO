@@ -263,6 +263,24 @@ class PortalGUI(tk.Tk):
         ttk.Button(button_row, text="キャンセル", command=on_cancel).pack(side=tk.RIGHT, padx=(0, 6))
 
         on_choice_change()
+        # ダイアログを親ウィンドウ中央に配置（親が最小化等の時は画面中央）
+        dialog.update_idletasks()
+        parent_w = self.winfo_width()
+        parent_h = self.winfo_height()
+        dialog_w = dialog.winfo_width()
+        dialog_h = dialog.winfo_height()
+
+        if parent_w <= 1 or parent_h <= 1 or not self.winfo_ismapped():
+            screen_w = dialog.winfo_screenwidth()
+            screen_h = dialog.winfo_screenheight()
+            x = max(0, (screen_w - dialog_w) // 2)
+            y = max(0, (screen_h - dialog_h) // 2)
+        else:
+            parent_x = self.winfo_rootx()
+            parent_y = self.winfo_rooty()
+            x = parent_x + max(0, (parent_w - dialog_w) // 2)
+            y = parent_y + max(0, (parent_h - dialog_h) // 2)
+        dialog.geometry(f"+{x}+{y}")
         dialog.wait_window()
         return result["text"]
 
