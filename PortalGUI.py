@@ -6,6 +6,8 @@ from tkinter import ttk, messagebox, simpledialog
 import subprocess
 import queue
 import locale
+import importlib.util
+import webbrowser
 
 
 EVENTS = {
@@ -53,6 +55,8 @@ class PortalGUI(tk.Tk):
         self.output_queue = queue.Queue()
         self.running = False
         self.last_action_text = ""
+        self.drive_urls = self._load_drive_urls()
+        self.current_drive_url = ""
 
         self._build_ui()
         self._poll_output()
@@ -67,6 +71,20 @@ class PortalGUI(tk.Tk):
             ttk.Radiobutton(
                 top, text=name, value=name, variable=self.event_var, command=self._refresh_actions
             ).pack(side=tk.LEFT, padx=6)
+
+        url_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        url_frame.pack(fill=tk.X)
+        ttk.Label(url_frame, text="GoogleドライブURL:").pack(side=tk.LEFT)
+        self.drive_url_var = tk.StringVar(value="")
+        self.drive_url_label = tk.Label(
+            url_frame, textvariable=self.drive_url_var, fg="#0078D7", cursor="hand2"
+        )
+        self.drive_url_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
+        self.drive_url_label.bind("<Button-1>", self._open_drive_url)
+        self.copy_drive_url_button = ttk.Button(
+            url_frame, text="URLコピー", command=self._copy_drive_url
+        )
+        self.copy_drive_url_button.pack(side=tk.RIGHT)
 
         self.actions_frame = ttk.LabelFrame(self, text="操作", padding=10)
         self.actions_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -110,6 +128,55 @@ class PortalGUI(tk.Tk):
                 ),
             )
             btn.pack(fill=tk.X, pady=4)
+        self._update_drive_url()
+
+    def _load_drive_urls(self):
+        urls = {}
+        for event_name, event in EVENTS.items():
+            drive_id = self._read_drive_id(event["dir"])
+            if drive_id:
+                urls[event_name] = f"https://drive.google.com/drive/folders/{drive_id}"
+            else:
+                urls[event_name] = ""
+        return urls
+
+    def _read_drive_id(self, event_dir):
+        defines_path = os.path.join(os.getcwd(), event_dir, "Defines.py")
+        try:
+            spec = importlib.util.spec_from_file_location(f"Defines_{event_dir}", defines_path)
+            if spec is None or spec.loader is None:
+                return ""
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return getattr(module, "drive_id", "")
+        except Exception:
+            return ""
+
+    def _update_drive_url(self):
+        url = self.drive_urls.get(self.event_var.get(), "")
+        self.current_drive_url = url
+        if url:
+            self.drive_url_var.set(url)
+            self.drive_url_label.config(fg="#0078D7", cursor="hand2")
+            self.copy_drive_url_button.config(state=tk.NORMAL)
+        else:
+            self.drive_url_var.set("URLが見つかりません")
+            self.drive_url_label.config(fg="#666666", cursor="")
+            self.copy_drive_url_button.config(state=tk.DISABLED)
+
+    def _open_drive_url(self, _event=None):
+        if not self.current_drive_url:
+            messagebox.showinfo("URLなし", "GoogleドライブのURLが見つかりません。")
+            return
+        webbrowser.open(self.current_drive_url)
+
+    def _copy_drive_url(self):
+        if not self.current_drive_url:
+            messagebox.showinfo("URLなし", "GoogleドライブのURLが見つかりません。")
+            return
+        self.clipboard_clear()
+        self.clipboard_append(self.current_drive_url)
+        self.update_idletasks()
 
     def _set_buttons_state(self, state):
         for child in self.actions_frame.winfo_children():
