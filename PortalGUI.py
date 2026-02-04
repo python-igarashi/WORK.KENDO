@@ -8,6 +8,8 @@ import queue
 import locale
 import importlib.util
 import webbrowser
+from datetime import datetime, timezone
+import tkinter.font as tkfont
 
 
 EVENTS = {
@@ -55,12 +57,19 @@ class PortalGUI(tk.Tk):
         self.output_queue = queue.Queue()
         self.running = False
         self.last_action_text = ""
+        self.last_action_script = ""
+        self.last_action_event_name = ""
+        self.last_action_event_dir = ""
         self.drive_urls = self._load_drive_urls()
         self.current_drive_url = ""
         self.status_path = ""
         self.pending_output_file_path = ""
+        self.latest_update_cache = {}
+        self.latest_update_running = False
+        self.latest_download_cache = {}
 
         self._build_ui()
+        self._schedule_drive_update()
         self._poll_output()
 
     def _build_ui(self):
@@ -79,7 +88,7 @@ class PortalGUI(tk.Tk):
         ttk.Label(url_frame, text="GoogleドライブURL:").pack(side=tk.LEFT)
         self.drive_url_var = tk.StringVar(value="")
         self.drive_url_label = tk.Label(
-            url_frame, textvariable=self.drive_url_var, fg="#0078D7", cursor="hand2"
+            url_frame, textvariable=self.drive_url_var, fg="#0078D7", cursor="hand2", anchor="w"
         )
         self.drive_url_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
         self.drive_url_label.bind("<Button-1>", self._open_drive_url)
@@ -87,6 +96,20 @@ class PortalGUI(tk.Tk):
             url_frame, text="URLコピー", command=self._copy_drive_url
         )
         self.copy_drive_url_button.pack(side=tk.RIGHT)
+
+        update_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        update_frame.pack(fill=tk.X)
+        ttk.Label(update_frame, text="Googleドライブ更新日時:").pack(side=tk.LEFT)
+        self.latest_update_var = tk.StringVar(value="")
+        self.latest_update_label = ttk.Label(update_frame, textvariable=self.latest_update_var)
+        self.latest_update_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
+
+        download_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        download_frame.pack(fill=tk.X)
+        ttk.Label(download_frame, text="最終ダウンロード日時:").pack(side=tk.LEFT)
+        self.latest_download_var = tk.StringVar(value="")
+        self.latest_download_label = ttk.Label(download_frame, textvariable=self.latest_download_var)
+        self.latest_download_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
 
         self.actions_frame = ttk.LabelFrame(self, text="操作", padding=10)
         self.actions_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -113,6 +136,21 @@ class PortalGUI(tk.Tk):
         x_scroll.pack(fill=tk.X, padx=10, pady=(0, 10))
         self.output_text.configure(xscrollcommand=x_scroll.set)
 
+        self.style = ttk.Style(self)
+        self.emphasis_style = "Emphasis.TButton"
+        default_font = tkfont.nametofont("TkDefaultFont")
+        self.emphasis_font = default_font.copy()
+        self.emphasis_font.configure(weight="bold")
+        self.style.configure(
+            self.emphasis_style,
+            foreground="#c0392b",
+            font=self.emphasis_font,
+        )
+        self.style.map(
+            self.emphasis_style,
+            foreground=[("disabled", "#c0392b")],
+        )
+
         self._refresh_actions()
 
     def _refresh_actions(self):
@@ -121,6 +159,7 @@ class PortalGUI(tk.Tk):
 
         event_name = self.event_var.get()
         event = EVENTS[event_name]
+        self.action_buttons = {}
 
         for label, script, dangerous in event["actions"]:
             btn = ttk.Button(
@@ -131,7 +170,12 @@ class PortalGUI(tk.Tk):
                 ),
             )
             btn.pack(fill=tk.X, pady=4)
+            self.action_buttons[script] = btn
         self._update_drive_url()
+        self._update_latest_update_label()
+        self._update_latest_download_label()
+        self._start_drive_update()
+        self._refresh_download_button_state()
 
     def _load_drive_urls(self):
         urls = {}
@@ -166,6 +210,175 @@ class PortalGUI(tk.Tk):
             self.drive_url_var.set("URLが見つかりません")
             self.drive_url_label.config(fg="#666666", cursor="")
             self.copy_drive_url_button.config(state=tk.DISABLED)
+
+    def _update_latest_update_label(self):
+        event_name = self.event_var.get()
+        cache = self.latest_update_cache.get(event_name, {})
+        text = cache.get("text", "")
+        self.latest_update_var.set(text)
+
+    def _update_latest_download_label(self):
+        event_name = self.event_var.get()
+        cache = self.latest_download_cache.get(event_name, {})
+        text = cache.get("text", "")
+        self.latest_download_var.set(text)
+
+    def _schedule_drive_update(self):
+        self._start_drive_update()
+        self.after(60000, self._schedule_drive_update)
+
+    def _start_drive_update(self):
+        event_name = self.event_var.get()
+        event_dir = EVENTS[event_name]["dir"]
+        self._refresh_download_status(event_name, event_dir)
+        if self.latest_update_running:
+            return
+        self.latest_update_running = True
+        thread = threading.Thread(
+            target=self._worker_drive_update, args=(event_name, event_dir), daemon=True
+        )
+        thread.start()
+
+    def _worker_drive_update(self, event_name, event_dir):
+        text, latest_dt = self._get_latest_modified_text(event_dir)
+        self.after(0, lambda: self._apply_drive_update(event_name, text, latest_dt))
+
+    def _apply_drive_update(self, event_name, text, latest_dt):
+        self.latest_update_running = False
+        self.latest_update_cache[event_name] = {"text": text, "dt": latest_dt}
+        if self.event_var.get() == event_name:
+            self.latest_update_var.set(text)
+        self._refresh_download_button_state()
+
+    def _get_latest_modified_text(self, event_dir):
+        context = self._read_drive_context(event_dir)
+        if not context:
+            return "取得失敗（Defines読込）", None
+        drive_id, service_account_path, filename_header, groupnames = context
+        if not drive_id:
+            return "取得失敗（drive_idなし）", None
+        if not service_account_path or not os.path.exists(service_account_path):
+            return "取得失敗（認証ファイルなし）", None
+        try:
+            from google.oauth2 import service_account
+            from googleapiclient.discovery import build
+        except Exception:
+            return "取得失敗（API未設定）", None
+
+        try:
+            creds = service_account.Credentials.from_service_account_file(
+                service_account_path,
+                scopes=["https://www.googleapis.com/auth/drive.readonly"],
+            )
+            drive_service = build("drive", "v3", credentials=creds, cache_discovery=False)
+            expected_names = {
+                f"{filename_header}.{name}" for name in groupnames + ["テンプレート", "記入例"]
+            }
+            latest_dt = None
+            page_token = None
+            query = (
+                f"'{drive_id}' in parents and "
+                "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
+            )
+            while True:
+                results = drive_service.files().list(
+                    q=query,
+                    fields="nextPageToken, files(id, name, modifiedTime)",
+                    pageToken=page_token,
+                ).execute()
+                for item in results.get("files", []):
+                    if item.get("name") not in expected_names:
+                        continue
+                    mt = item.get("modifiedTime")
+                    if not mt:
+                        continue
+                    try:
+                        dt = datetime.fromisoformat(mt.replace("Z", "+00:00"))
+                    except Exception:
+                        continue
+                    if latest_dt is None or dt > latest_dt:
+                        latest_dt = dt
+                page_token = results.get("nextPageToken")
+                if not page_token:
+                    break
+            if latest_dt is None:
+                return "対象ファイルなし", None
+            return latest_dt.astimezone().strftime("%Y/%m/%d %H:%M:%S"), latest_dt
+        except Exception as exc:
+            return f"取得失敗（{type(exc).__name__}）", None
+
+    def _read_drive_context(self, event_dir):
+        defines_path = os.path.join(os.getcwd(), event_dir, "Defines.py")
+        try:
+            spec = importlib.util.spec_from_file_location(f"Defines_{event_dir}_d", defines_path)
+            if spec is None or spec.loader is None:
+                return None
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            drive_id = getattr(module, "drive_id", "")
+            service_account_file = getattr(module, "service_account_file", "")
+            filename_header = getattr(module, "filename_header", "")
+            groupnames = list(getattr(module, "l_groupname", []))
+            if service_account_file and not os.path.isabs(service_account_file):
+                service_account_file = os.path.join(os.getcwd(), event_dir, service_account_file)
+            return drive_id, service_account_file, filename_header, groupnames
+        except Exception:
+            return None
+    
+    def _refresh_download_status(self, event_name, event_dir):
+        text, oldest_dt = self._get_latest_download_text(event_dir)
+        self.latest_download_cache[event_name] = {"text": text, "dt": oldest_dt}
+        if self.event_var.get() == event_name:
+            self.latest_download_var.set(text)
+        self._refresh_download_button_state()
+
+    def _get_latest_download_text(self, event_dir):
+        download_folder = self._read_download_folder(event_dir)
+        if not download_folder:
+            download_folder = ".\\DownloadTSV"
+        folder_path = os.path.join(os.getcwd(), event_dir, download_folder)
+        if not os.path.isdir(folder_path):
+            return "未取得", None
+        oldest_ts = None
+        for name in os.listdir(folder_path):
+            if not name.lower().endswith(".tsv"):
+                continue
+            path = os.path.join(folder_path, name)
+            try:
+                ts = os.path.getmtime(path)
+            except Exception:
+                continue
+            if oldest_ts is None or ts < oldest_ts:
+                oldest_ts = ts
+        if oldest_ts is None:
+            return "未取得", None
+        dt_utc = datetime.fromtimestamp(oldest_ts, tz=timezone.utc)
+        return dt_utc.astimezone().strftime("%Y/%m/%d %H:%M:%S"), dt_utc
+
+    def _read_download_folder(self, event_dir):
+        defines_path = os.path.join(os.getcwd(), event_dir, "Defines.py")
+        try:
+            spec = importlib.util.spec_from_file_location(f"Defines_{event_dir}_dlf", defines_path)
+            if spec is None or spec.loader is None:
+                return ""
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return getattr(module, "download_folder", "")
+        except Exception:
+            return ""
+
+    def _refresh_download_button_state(self):
+        event_name = self.event_var.get()
+        btn = self.action_buttons.get("02_DownloadTSV.py")
+        if not btn:
+            return
+        update_dt = self.latest_update_cache.get(event_name, {}).get("dt")
+        download_dt = self.latest_download_cache.get(event_name, {}).get("dt")
+        needs_download = bool(update_dt and (not download_dt or update_dt > download_dt))
+        if needs_download:
+            btn.config(text="※ ダウンロード（更新あり）", style=self.emphasis_style)
+        else:
+            btn.config(text="ダウンロード", style="TButton")
 
     def _open_drive_url(self, _event=None):
         if not self.current_drive_url:
@@ -232,6 +445,9 @@ class PortalGUI(tk.Tk):
         self.output_text.see(tk.END)
 
         self.last_action_text = f"{event_name} > {label}"
+        self.last_action_script = script
+        self.last_action_event_name = event_name
+        self.last_action_event_dir = event["dir"]
         self.running = True
         self._set_buttons_state(tk.DISABLED)
 
@@ -274,6 +490,10 @@ class PortalGUI(tk.Tk):
                     self.running = False
                     self._append_output_file_path()
                     self._set_buttons_state(tk.NORMAL)
+                    if self.last_action_script == "02_DownloadTSV.py":
+                        self._refresh_download_status(
+                            self.last_action_event_name, self.last_action_event_dir
+                        )
                     continue
                 self.output_text.configure(state=tk.NORMAL)
                 self.output_text.insert(tk.END, item)

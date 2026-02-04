@@ -2,6 +2,8 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import gspread
 import requests
+import os
+import glob
 
 import Defines
 
@@ -15,6 +17,14 @@ SCOPES = [
 creds = service_account.Credentials.from_service_account_file(Defines.service_account_file, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 gc = gspread.authorize(creds)
+
+# ========= 既存TSVの削除 ========= #
+download_dir = Defines.download_folder
+for path in glob.glob(os.path.join(download_dir, "*.tsv")):
+	try:
+		os.remove(path)
+	except Exception:
+		pass
 
 # ========= 全団体のスプレッドシートの、全てのワークシートのTSVファイルをダウンロード ========= #
 for groupname in Defines.l_groupname + ["テンプレート", "記入例"]:
