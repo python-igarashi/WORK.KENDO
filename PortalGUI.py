@@ -57,6 +57,8 @@ class PortalGUI(tk.Tk):
         self.last_action_text = ""
         self.drive_urls = self._load_drive_urls()
         self.current_drive_url = ""
+        self.status_path = ""
+        self.pending_output_file_path = ""
 
         self._build_ui()
         self._poll_output()
@@ -95,9 +97,10 @@ class PortalGUI(tk.Tk):
         copy_row = ttk.Frame(output_frame)
         copy_row.pack(fill=tk.X, pady=(0, 6))
         ttk.Button(copy_row, text="コピー", command=self._copy_output).pack(side=tk.RIGHT)
-        self.status_label = ttk.Label(copy_row, text="実行中…", foreground="#0078D7")
+        self.status_label = tk.Label(copy_row, text="実行中…", fg="#0078D7", cursor="")
         self.status_label.pack(side=tk.LEFT)
         self.status_label.pack_forget()
+        self.status_label.bind("<Button-1>", self._open_status_path)
 
         self.output_text = tk.Text(output_frame, wrap=tk.NONE, height=20)
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -184,9 +187,16 @@ class PortalGUI(tk.Tk):
                 child.config(state=state)
         if state == tk.DISABLED:
             self.status_label.config(text="実行中…")
+            self.status_label.config(fg="#0078D7", cursor="")
             self.status_label.pack(side=tk.LEFT)
         else:
-            self.status_label.config(text=self.last_action_text or "")
+            text = self.last_action_text or ""
+            if self.status_path:
+                text = f"{text} > {self.status_path}"
+                self.status_label.config(fg="#0078D7", cursor="hand2")
+            else:
+                self.status_label.config(fg="#666666", cursor="")
+            self.status_label.config(text=text)
             if self.last_action_text:
                 self.status_label.pack(side=tk.LEFT)
             else:
@@ -208,6 +218,11 @@ class PortalGUI(tk.Tk):
             stdin_text = self._prompt_tournament_seed(event["dir"])
             if stdin_text is None:
                 return
+            self.pending_output_file_path = self._get_tournament_output_path(event["dir"])
+        elif script == "03_SumPlayer.py" and event["dir"] == "春の大会":
+            self.pending_output_file_path = self._get_spring_booklet_output_path(event["dir"])
+        else:
+            self.pending_output_file_path = ""
 
         self.output_text.configure(state=tk.NORMAL)
         self.output_text.delete("1.0", tk.END)
@@ -257,6 +272,7 @@ class PortalGUI(tk.Tk):
                 item = self.output_queue.get_nowait()
                 if item is None:
                     self.running = False
+                    self._append_output_file_path()
                     self._set_buttons_state(tk.NORMAL)
                     continue
                 self.output_text.configure(state=tk.NORMAL)
@@ -266,6 +282,19 @@ class PortalGUI(tk.Tk):
         except queue.Empty:
             pass
         self.after(100, self._poll_output)
+
+    def _append_output_file_path(self):
+        if not self.pending_output_file_path:
+            self.status_path = ""
+            return
+        self.status_path = self.pending_output_file_path
+
+    def _open_status_path(self, _event=None):
+        if not self.status_path:
+            return
+        folder = os.path.dirname(self.status_path)
+        if folder and os.path.exists(folder):
+            os.startfile(folder)
 
     def _copy_output(self):
         text = self.output_text.get("1.0", tk.END)
@@ -369,6 +398,38 @@ class PortalGUI(tk.Tk):
         except Exception:
             pass
         return last_seed, last_time
+
+    def _get_tournament_output_path(self, event_dir):
+        tournament_folder = self._read_tournament_folder(event_dir)
+        if not tournament_folder:
+            tournament_folder = ".\\TournamentFiles"
+        filename = ""
+        if event_dir == "春の大会":
+            filename = "Tournament_春.xlsx"
+        elif event_dir == "秋の大会":
+            filename = "Tournament_秋.xlsx"
+        if not filename:
+            return ""
+        return os.path.join(os.getcwd(), event_dir, tournament_folder, filename)
+
+    def _read_tournament_folder(self, event_dir):
+        defines_path = os.path.join(os.getcwd(), event_dir, "Defines.py")
+        try:
+            spec = importlib.util.spec_from_file_location(f"Defines_{event_dir}_t", defines_path)
+            if spec is None or spec.loader is None:
+                return ""
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return getattr(module, "tournament_folder", "")
+        except Exception:
+            return ""
+
+    def _get_spring_booklet_output_path(self, event_dir):
+        if event_dir != "春の大会":
+            return ""
+        folder = "BookletFiles"
+        filename = "PlayerList_春.xlsx"
+        return os.path.join(os.getcwd(), event_dir, folder, filename)
 
 
 if __name__ == "__main__":
