@@ -117,7 +117,7 @@ class PortalGUI(tk.Tk):
         self.actions_frame = ttk.LabelFrame(self, text="操作", padding=10)
         self.actions_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        output_frame = ttk.LabelFrame(self, text="標準出力", padding=10)
+        output_frame = ttk.LabelFrame(self, text="操作ログ", padding=10)
         output_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         copy_row = ttk.Frame(output_frame)
