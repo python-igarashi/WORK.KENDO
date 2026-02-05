@@ -78,10 +78,13 @@ class PortalGUI(tk.Tk):
 
         ttk.Label(top, text="大会を選択:").pack(side=tk.LEFT)
         self.event_var = tk.StringVar(value="研修会")
+        self.event_radiobuttons = []
         for name in EVENTS.keys():
-            ttk.Radiobutton(
+            rb = ttk.Radiobutton(
                 top, text=name, value=name, variable=self.event_var, command=self._refresh_actions
-            ).pack(side=tk.LEFT, padx=6)
+            )
+            rb.pack(side=tk.LEFT, padx=6)
+            self.event_radiobuttons.append(rb)
 
         url_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
         url_frame.pack(fill=tk.X)
@@ -99,7 +102,7 @@ class PortalGUI(tk.Tk):
 
         update_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
         update_frame.pack(fill=tk.X)
-        ttk.Label(update_frame, text="Googleドライブ更新日時:").pack(side=tk.LEFT)
+        ttk.Label(update_frame, text="Googleシート更新日時:").pack(side=tk.LEFT)
         self.latest_update_var = tk.StringVar(value="")
         self.latest_update_label = ttk.Label(update_frame, textvariable=self.latest_update_var)
         self.latest_update_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
@@ -398,6 +401,8 @@ class PortalGUI(tk.Tk):
         for child in self.actions_frame.winfo_children():
             if isinstance(child, ttk.Button):
                 child.config(state=state)
+        for rb in self.event_radiobuttons:
+            rb.config(state=state)
         if state == tk.DISABLED:
             self.status_label.config(text="実行中…")
             self.status_label.config(fg="#0078D7", cursor="")
