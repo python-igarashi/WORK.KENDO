@@ -7,6 +7,8 @@
 完了後はステータス表示に「大会名 > 操作名」を表示する。
 トーナメント作成と春の大会の選手集計は、完了後ステータス表示に
 「大会名 > 操作名 > 出力ファイルパス」を表示し、クリックで出力フォルダを開ける。
+大会選択ラジオボタンの下に画像を表示する（各大会フォルダの image.png）。
+画像は固定サイズ枠に収まるよう表示し、URL・更新日時・ダウンロード日時の左側に配置する。
 
 操作ログエリアには「コピー」ボタンを付け、内容をクリップボードにコピーできるようにする。
 
@@ -25,13 +27,13 @@ Googleドライブ更新日時が最終ダウンロード日時より新しい�
 - （前回の抽選結果番号の発行日時）
 - 選択肢はラジオボタン3種
   - 前回の抽選結果番号を使用
-  - 新規抽選（new）
+  - 新しい抽選結果（ランダム）を作成
   - 数字を指定（右側に数字入力欄）
 数字指定の場合のみ入力欄を有効化する。
 キャンセル時は実行しない。
 
 # 研修会
-## URLを出力
+## GoogleシートURL
 押下すると以下を実行する
 cd 研修会
 python 01_PrintURL.py
@@ -46,13 +48,13 @@ python 02_DownloadTSV.py
 cd 研修会
 python 03_SumPlayer.py
 
-## (注意)入力シート再作成
+## (注意)Googleシート再作成
 押下すると以下を実行する
 cd 研修会
 python xx_RemakeFiles.py
 
 # 春の大会
-## URLを出力
+## GoogleシートURL
 押下すると以下を実行する
 cd 春の大会
 python 01_PrintURL.py
@@ -77,13 +79,13 @@ python 04_SumStaff.py
 cd 春の大会
 python 05_CreateTournament.py
 
-## (注意)入力シート再作成
+## (注意)Googleシート再作成
 押下すると以下を実行する
 cd 春の大会
 python xx_RemakeFiles.py
 
 # 秋の大会
-## URLを出力
+## GoogleシートURL
 押下すると以下を実行する
 cd 秋の大会
 python 01_PrintURL.py
@@ -108,7 +110,7 @@ python 04_SumStaff.py
 cd 秋の大会
 python 05_CreateTournament.py
 
-## (注意)入力シート再作成
+## (注意)Googleシート再作成
 押下すると以下を実行する
 cd 秋の大会
 python xx_RemakeFiles.py

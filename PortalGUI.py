@@ -616,7 +616,7 @@ class PortalGUI(tk.Tk):
             entry.configure(state=state)
 
         ttk.Radiobutton(frame, text="前回の抽選結果番号を使用", value="previous", variable=choice, command=on_choice_change).pack(anchor=tk.W)
-        ttk.Radiobutton(frame, text="新しい抽選結果番号（ランダム）で作成", value="new", variable=choice, command=on_choice_change).pack(anchor=tk.W, pady=(2, 2))
+        ttk.Radiobutton(frame, text="新しい抽選結果（ランダム）を作成", value="new", variable=choice, command=on_choice_change).pack(anchor=tk.W, pady=(2, 2))
 
         manual_row = ttk.Frame(frame)
         manual_row.pack(fill=tk.X, pady=(2, 0))
