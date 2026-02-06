@@ -1,7 +1,6 @@
 # Repository Guidelines
 
 原則として回答・説明・出力は日本語で行う（コード引用は原文のまま）。
-Pythonの実行・テストはWindows(cmd)で行う。Codexは実行せず、必要ならコマンド提示に留める。
 
 ## Project Structure & Module Organization
 このリポジトリは内部大会向けの Python ツール集です。各大会フォルダに README と実行スクリプトがあります。
@@ -17,6 +16,7 @@ Pythonの実行・テストはWindows(cmd)で行う。Codexは実行せず、必
 原則 read-only（閲覧のみ）で作業し、変更が必要な場合はまず unified diff を提示し、適用前に確認を取ります。
 対象フォルダに credential ファイル（例: `credentials_*.json`）を配置してから実行します。
 
+- `python PortalGI.py`: (The specifications are in PortalGUI.md.)
 - `python 01_PrintURL.py`: print Google Sheet URLs for data entry.
 - `python 02_DownloadTSV.py`: download all sheets as TSV files.
 - `python 03_SumPlayer.py`: aggregate players and write results.

@@ -164,12 +164,12 @@ class PortalGUI(tk.Tk):
         self.emphasis_font.configure(weight="bold")
         self.style.configure(
             self.emphasis_style,
-            foreground="#c0392b",
+            foreground="#0078D7",
             font=self.emphasis_font,
         )
         self.style.map(
             self.emphasis_style,
-            foreground=[("disabled", "#c0392b")],
+            foreground=[("disabled", "#0078D7")],
         )
 
         self._refresh_actions()
