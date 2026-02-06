@@ -16,32 +16,32 @@ EVENTS = {
     "研修会": {
         "dir": "研修会",
         "actions": [
-            ("URLを出力", "01_PrintURL.py", False),
+            ("GoogleシートURL", "01_PrintURL.py", False),
             ("ダウンロード", "02_DownloadTSV.py", False),
             ("選手集計", "03_SumPlayer.py", False),
-            ("(注意)入力シート再作成", "xx_RemakeFiles.py", True),
+            ("(注意)Googleシート再作成", "xx_RemakeFiles.py", True),
         ],
     },
     "春の大会": {
         "dir": "春の大会",
         "actions": [
-            ("URLを出力", "01_PrintURL.py", False),
+            ("GoogleシートURL", "01_PrintURL.py", False),
             ("ダウンロード", "02_DownloadTSV.py", False),
             ("選手集計", "03_SumPlayer.py", False),
             ("係員集計", "04_SumStaff.py", False),
             ("トーナメント作成", "05_CreateTournament.py", False),
-            ("(注意)入力シート再作成", "xx_RemakeFiles.py", True),
+            ("(注意)Googleシート再作成", "xx_RemakeFiles.py", True),
         ],
     },
     "秋の大会": {
         "dir": "秋の大会",
         "actions": [
-            ("URLを出力", "01_PrintURL.py", False),
+            ("GoogleシートURL", "01_PrintURL.py", False),
             ("ダウンロード", "02_DownloadTSV.py", False),
             ("選手集計", "03_SumPlayer.py", False),
             ("係員集計", "04_SumStaff.py", False),
             ("トーナメント作成", "05_CreateTournament.py", False),
-            ("(注意)入力シート再作成", "xx_RemakeFiles.py", True),
+            ("(注意)Googleシート再作成", "xx_RemakeFiles.py", True),
         ],
     },
 }
@@ -67,6 +67,7 @@ class PortalGUI(tk.Tk):
         self.latest_update_cache = {}
         self.latest_update_running = False
         self.latest_download_cache = {}
+        self.event_image = None
 
         self._build_ui()
         self._schedule_drive_update()
@@ -86,7 +87,24 @@ class PortalGUI(tk.Tk):
             rb.pack(side=tk.LEFT, padx=6)
             self.event_radiobuttons.append(rb)
 
-        url_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        info_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        info_frame.pack(fill=tk.X)
+
+        self.image_target_width = 120
+        self.image_target_height = 120
+        self.event_image_canvas = tk.Canvas(
+            info_frame,
+            width=self.image_target_width,
+            height=self.image_target_height,
+            highlightthickness=0,
+            bd=0,
+        )
+        self.event_image_canvas.pack(side=tk.LEFT, padx=(0, 10))
+
+        info_right = ttk.Frame(info_frame)
+        info_right.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        url_frame = ttk.Frame(info_right, padding=(0, 0, 0, 6))
         url_frame.pack(fill=tk.X)
         ttk.Label(url_frame, text="GoogleドライブURL:").pack(side=tk.LEFT)
         self.drive_url_var = tk.StringVar(value="")
@@ -100,14 +118,14 @@ class PortalGUI(tk.Tk):
         )
         self.copy_drive_url_button.pack(side=tk.RIGHT)
 
-        update_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        update_frame = ttk.Frame(info_right, padding=(0, 0, 0, 6))
         update_frame.pack(fill=tk.X)
         ttk.Label(update_frame, text="Googleシート更新日時:").pack(side=tk.LEFT)
         self.latest_update_var = tk.StringVar(value="")
         self.latest_update_label = ttk.Label(update_frame, textvariable=self.latest_update_var)
         self.latest_update_label.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
 
-        download_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
+        download_frame = ttk.Frame(info_right, padding=(0, 0, 0, 6))
         download_frame.pack(fill=tk.X)
         ttk.Label(download_frame, text="最終ダウンロード日時:").pack(side=tk.LEFT)
         self.latest_download_var = tk.StringVar(value="")
@@ -177,6 +195,7 @@ class PortalGUI(tk.Tk):
         self._update_drive_url()
         self._update_latest_update_label()
         self._update_latest_download_label()
+        self._update_event_image()
         self._start_drive_update()
         self._refresh_download_button_state()
 
@@ -213,6 +232,53 @@ class PortalGUI(tk.Tk):
             self.drive_url_var.set("URLが見つかりません")
             self.drive_url_label.config(fg="#666666", cursor="")
             self.copy_drive_url_button.config(state=tk.DISABLED)
+
+    def _update_event_image(self):
+        event_name = self.event_var.get()
+        event_dir = EVENTS[event_name]["dir"]
+        image_path = os.path.join(os.getcwd(), event_dir, "image.png")
+        self.event_image_canvas.delete("all")
+
+        if not os.path.exists(image_path):
+            self.event_image = None
+            self.event_image_canvas.create_text(
+                self.image_target_width // 2,
+                self.image_target_height // 2,
+                text="画像なし",
+                fill="#666666",
+            )
+            return
+
+        try:
+            image = tk.PhotoImage(file=image_path)
+        except Exception:
+            self.event_image = None
+            self.event_image_canvas.create_text(
+                self.image_target_width // 2,
+                self.image_target_height // 2,
+                text="画像読込失敗",
+                fill="#666666",
+            )
+            return
+
+        w, h = image.width(), image.height()
+        if w == 0 or h == 0:
+            return
+
+        scale = min(self.image_target_width / w, self.image_target_height / h)
+        if scale >= 1:
+            factor = max(1, int(scale))
+            image = image.zoom(factor, factor)
+        else:
+            factor = max(1, int(1 / scale))
+            image = image.subsample(factor, factor)
+
+        self.event_image = image
+        self.event_image_canvas.create_image(
+            self.image_target_width // 2,
+            self.image_target_height // 2,
+            image=self.event_image,
+        )
 
     def _update_latest_update_label(self):
         event_name = self.event_var.get()
