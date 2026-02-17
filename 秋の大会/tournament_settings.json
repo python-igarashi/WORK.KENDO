@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "tournament_date": "2025.10.26",
+  "categories": [
+    {
+      "summary_name": "小学1･2年生の部",
+      "match_name": null,
+      "match_place1": "第一試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "小学3･4年生の部",
+      "match_name": null,
+      "match_place1": "第一試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "小学5･6年生の部",
+      "match_name": null,
+      "match_place1": "第二試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "中学生女子の部",
+      "match_name": null,
+      "match_place1": "第二試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "中学1年生男子の部",
+      "match_name": null,
+      "match_place1": "第三試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "中学2･3年生男子の部",
+      "match_name": null,
+      "match_place1": "第三試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "一般女子5段以下の部",
+      "match_name": "一般女子五段以下の部",
+      "match_place1": "第一試合場(選手番号1～4)",
+      "match_place2": "第二試合場(選手番号5～9)"
+    },
+    {
+      "summary_name": "一般男子3段以下の部",
+      "match_name": "一般男子三段以下の部",
+      "match_place1": "第一試合場(選手番号1～16)",
+      "match_place2": "第二試合場(選手番号17～32)"
+    },
+    {
+      "summary_name": "一般男子4･5段の部",
+      "match_name": "一般男子四･五段の部",
+      "match_place1": "第三試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "一般6･7段の部",
+      "match_name": "一般六･七段の部",
+      "match_place1": "第一試合場(選手番号1～7)",
+      "match_place2": "第二試合場(選手番号8～14)"
+    }
+  ]
+}

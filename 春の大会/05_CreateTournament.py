@@ -118,11 +118,39 @@ print(f"抽選結果番号 [{seed}] で実行します。")
 Defines.save_tournament_no_logfile(seed, seed_time) # 抽選結果番号をファイルに保存
 
 
-match_date = "2025.6.8"
+# トーナメント設定を読み込む
+settings = Defines.load_tournament_settings()
+if settings is None:
+	print("エラー: トーナメント設定ファイルが見つからないか、読み込みに失敗しました。")
+	print("デフォルト設定で実行します...")
+	import os
+	event_dir = os.path.basename(os.getcwd())
+	settings = Defines.get_default_tournament_settings(event_dir)
+	if settings is None:
+		print("エラー: デフォルト設定の取得に失敗しました。プログラムを終了します。")
+		import sys
+		sys.exit(1)
 
-Create("小学生の部",   seed=seed, match_date=match_date, match_place1="第一試合場", init_workbook=True)
-Create("中学生の部",   seed=seed, match_date=match_date, match_place1="第二試合場")
-Create("一般女子の部", seed=seed, match_date=match_date, match_place1="第一試合場(チーム番号1～4)",  match_place2="第二試合場(チーム番号5～9)")
-Create("一般の部",     seed=seed, match_date=match_date, match_place1="第一試合場(チーム番号1～16)", match_place2="第二試合場(チーム番号17～32)")
+match_date = settings["tournament_date"]
+categories = settings["categories"]
+
+# 各部門のトーナメント作成
+for i, category in enumerate(categories):
+	summary_name = category["summary_name"]
+	match_name = category.get("match_name") or None
+	match_place1 = category.get("match_place1", "")
+	match_place2 = category.get("match_place2", "")
+	init_workbook = (i == 0)  # 最初の部門のみTrue
+
+	Create(
+		summary_name,
+		seed=seed,
+		match_name=match_name,
+		match_date=match_date,
+		match_place1=match_place1,
+		match_place2=match_place2,
+		hide_groupname=True,  # 春の大会は常にTrue（チーム戦）
+		init_workbook=init_workbook
+	)
 
 print(f"抽選結果番号 [{seed}] での抽選を終了しました。")

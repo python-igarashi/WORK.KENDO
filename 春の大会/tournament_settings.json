@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "tournament_date": "2025.6.8",
+  "categories": [
+    {
+      "summary_name": "小学生の部",
+      "match_name": null,
+      "match_place1": "第一試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "中学生の部",
+      "match_name": null,
+      "match_place1": "第二試合場",
+      "match_place2": ""
+    },
+    {
+      "summary_name": "一般女子の部",
+      "match_name": null,
+      "match_place1": "第一試合場(チーム番号1～4)",
+      "match_place2": "第二試合場(チーム番号5～9)"
+    },
+    {
+      "summary_name": "一般の部",
+      "match_name": null,
+      "match_place1": "第一試合場(チーム番号1～16)",
+      "match_place2": "第二試合場(チーム番号17～32)"
+    }
+  ]
+}

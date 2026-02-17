@@ -103,12 +103,12 @@ def read_tournament_no_logfile():
 			reader = csv.reader(logfile, delimiter=',')
 			for row in reader:
 				if len(row) == 2 and row[0].isdigit():
-					result.append([ row[0], row[1] ]) # [抽選結果番号, 日時]
+					result.append([ int(row[0]), row[1] ]) # [抽選結果番号, 日時]
 	except:
 		print("抽選結果番号ログファイルの読込をスキップしました。")
 		pass
 	if len(result) == 0:
-		result.append(["100000000", "2000/01/01 00:00:00"])
+		result.append([100000000, "2000/01/01 00:00:00"])
 	return result
 
 def save_tournament_no_logfile(seed, seed_time):
@@ -127,7 +127,7 @@ def pad_list(l_value, length):
 # TSVファイルから二次元配列を返却する
 def tsv_get_all_values(tsv_filename):
 	import csv
-	
+
 	result = []
 	with open(tsv_filename, newline='', encoding='utf-8') as tsvfile:
 		reader = csv.reader(tsvfile, delimiter='\t')
@@ -135,3 +135,119 @@ def tsv_get_all_values(tsv_filename):
 			# 空欄が None にならないよう、空文字に統一
 			result.append([cell if cell is not None else "" for cell in row])
 	return result
+
+# トーナメント設定ファイル
+tournament_settings_file = ".\\tournament_settings.json"
+
+def load_tournament_settings():
+	"""tournament_settings.jsonを読み込む"""
+	import json
+	try:
+		with open(tournament_settings_file, encoding='utf-8') as f:
+			data = json.load(f)
+			# バリデーション
+			if "tournament_date" not in data or "categories" not in data:
+				print(f"警告: {tournament_settings_file} に必須フィールドがありません。")
+				return None
+			if not isinstance(data["categories"], list):
+				print(f"警告: {tournament_settings_file} のcategoriesが配列ではありません。")
+				return None
+			return data
+	except FileNotFoundError:
+		print(f"情報: {tournament_settings_file} が見つかりません。")
+		return None
+	except json.JSONDecodeError as e:
+		print(f"エラー: {tournament_settings_file} のJSON解析に失敗しました: {e}")
+		return None
+	except Exception as e:
+		print(f"エラー: {tournament_settings_file} の読込に失敗しました: {e}")
+		return None
+
+def save_tournament_settings(tournament_date, categories):
+	"""tournament_settings.jsonに保存する"""
+	import json
+	try:
+		data = {
+			"version": "1.0",
+			"tournament_date": tournament_date,
+			"categories": categories
+		}
+		with open(tournament_settings_file, "w", encoding='utf-8') as f:
+			json.dump(data, f, ensure_ascii=False, indent=2)
+		print(f"トーナメント設定を保存しました: {tournament_settings_file}")
+		return True
+	except Exception as e:
+		print(f"エラー: {tournament_settings_file} の保存に失敗しました: {e}")
+		return False
+
+def get_default_tournament_settings(event_dir):
+	"""デフォルトのトーナメント設定を返す"""
+	if event_dir == "秋の大会":
+		return {
+			"version": "1.0",
+			"tournament_date": "2025.10.26",
+			"categories": [
+				{
+					"summary_name": "小学1･2年生の部",
+					"match_name": None,
+					"match_place1": "第一試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "小学3･4年生の部",
+					"match_name": None,
+					"match_place1": "第一試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "小学5･6年生の部",
+					"match_name": None,
+					"match_place1": "第二試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "中学生女子の部",
+					"match_name": None,
+					"match_place1": "第二試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "中学1年生男子の部",
+					"match_name": None,
+					"match_place1": "第三試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "中学2･3年生男子の部",
+					"match_name": None,
+					"match_place1": "第三試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "一般女子5段以下の部",
+					"match_name": "一般女子五段以下の部",
+					"match_place1": "第一試合場(選手番号1～4)",
+					"match_place2": "第二試合場(選手番号5～9)"
+				},
+				{
+					"summary_name": "一般男子3段以下の部",
+					"match_name": "一般男子三段以下の部",
+					"match_place1": "第一試合場(選手番号1～16)",
+					"match_place2": "第二試合場(選手番号17～32)"
+				},
+				{
+					"summary_name": "一般男子4･5段の部",
+					"match_name": "一般男子四･五段の部",
+					"match_place1": "第三試合場",
+					"match_place2": ""
+				},
+				{
+					"summary_name": "一般6･7段の部",
+					"match_name": "一般六･七段の部",
+					"match_place1": "第一試合場(選手番号1～7)",
+					"match_place2": "第二試合場(選手番号8～14)"
+				}
+			]
+		}
+	else:
+		return None

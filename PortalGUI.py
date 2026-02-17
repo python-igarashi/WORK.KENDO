@@ -499,8 +499,8 @@ class PortalGUI(tk.Tk):
 
         stdin_text = None
         if script == "05_CreateTournament.py":
-            stdin_text = self._prompt_tournament_seed(event["dir"])
-            if stdin_text is None:
+            stdin_text, settings_ok = self._prompt_tournament_create(event["dir"])
+            if stdin_text is None or not settings_ok:
                 return
             self.pending_output_file_path = self._get_tournament_output_path(event["dir"])
         elif script == "03_SumPlayer.py" and event["dir"] == "春の大会":
@@ -714,6 +714,365 @@ class PortalGUI(tk.Tk):
             return getattr(module, "tournament_folder", "")
         except Exception:
             return ""
+
+    def _prompt_tournament_create(self, event_dir):
+        """トーナメント作成の統合ダイアログ（seed選択 + 大会設定編集）"""
+        import importlib.util
+
+        # Defines.pyを動的にロード
+        defines_path = os.path.join(os.getcwd(), event_dir, "Defines.py")
+        spec = importlib.util.spec_from_file_location(f"Defines_{event_dir}_tc", defines_path)
+        if spec is None or spec.loader is None:
+            messagebox.showerror("エラー", "Defines.pyの読み込みに失敗しました。")
+            return None, False
+        defines = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(defines)
+
+        # 設定を読み込む（またはデフォルト設定を取得）
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(os.path.join(os.getcwd(), event_dir))
+            settings = defines.load_tournament_settings()
+            if settings is None:
+                settings = defines.get_default_tournament_settings(event_dir)
+                if settings is None:
+                    messagebox.showerror("エラー", "デフォルト設定の取得に失敗しました。")
+                    return None, False
+        finally:
+            os.chdir(old_cwd)
+
+        # Seed情報を取得
+        last_seed, last_time = self._read_last_tournament_seed(event_dir)
+
+        # ダイアログを作成
+        dialog = tk.Toplevel(self)
+        dialog.title(f"トーナメント作成 - {event_dir}")
+        dialog.geometry("800x650")
+        dialog.resizable(True, True)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=12)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # ===== Seed選択セクション =====
+        seed_frame = ttk.LabelFrame(main_frame, text="抽選結果番号", padding=10)
+        seed_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(seed_frame, text=f"前回: {last_seed} ({last_time})").pack(anchor=tk.W, pady=(0, 5))
+
+        choice = tk.StringVar(value="previous")
+        entry_var = tk.StringVar(value="")
+
+        def on_choice_change():
+            state = tk.NORMAL if choice.get() == "manual" else tk.DISABLED
+            entry.configure(state=state)
+
+        ttk.Radiobutton(seed_frame, text="前回の抽選結果番号を使用", value="previous", variable=choice, command=on_choice_change).pack(anchor=tk.W)
+        ttk.Radiobutton(seed_frame, text="新しい抽選結果（ランダム）を作成", value="new", variable=choice, command=on_choice_change).pack(anchor=tk.W, pady=(2, 2))
+
+        manual_row = ttk.Frame(seed_frame)
+        manual_row.pack(fill=tk.X, pady=(2, 0))
+        ttk.Radiobutton(manual_row, text="抽選結果番号を指定", value="manual", variable=choice, command=on_choice_change).pack(side=tk.LEFT)
+        entry = ttk.Entry(manual_row, width=20, textvariable=entry_var, state=tk.DISABLED)
+        entry.pack(side=tk.LEFT, padx=(8, 0))
+
+        # ===== 大会設定セクション =====
+        settings_frame = ttk.LabelFrame(main_frame, text="大会設定", padding=10)
+        settings_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 大会開催日
+        date_frame = ttk.Frame(settings_frame)
+        date_frame.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(date_frame, text="大会開催日:").pack(side=tk.LEFT)
+        date_var = tk.StringVar(value=settings["tournament_date"])
+        date_entry = ttk.Entry(date_frame, textvariable=date_var, width=20)
+        date_entry.pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(date_frame, text="（例: 2025.6.8）").pack(side=tk.LEFT, padx=(5, 0))
+
+        # 部門リスト
+        ttk.Label(settings_frame, text="部門リスト:").pack(anchor=tk.W, pady=(0, 5))
+
+        tree_frame = ttk.Frame(settings_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ("summary_name", "match_name", "match_place1", "match_place2")
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=8)
+        tree.heading("summary_name", text="部門名（シート名）")
+        tree.heading("match_name", text="部門名（トーナメント表）")
+        tree.heading("match_place1", text="試合場1")
+        tree.heading("match_place2", text="試合場2")
+
+        tree.column("summary_name", width=150)
+        tree.column("match_name", width=150)
+        tree.column("match_place1", width=200)
+        tree.column("match_place2", width=200)
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # 部門データをTreeviewに読み込む
+        def load_categories():
+            tree.delete(*tree.get_children())
+            for cat in settings["categories"]:
+                match_name_display = cat.get("match_name") or "(シート名と同じ)"
+                tree.insert("", tk.END, values=(
+                    cat["summary_name"],
+                    match_name_display,
+                    cat.get("match_place1", ""),
+                    cat.get("match_place2", "")
+                ))
+
+        load_categories()
+
+        # 部門編集ボタン
+        button_frame = ttk.Frame(settings_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        def add_category():
+            edit_dialog = tk.Toplevel(dialog)
+            edit_dialog.title("部門の追加")
+            edit_dialog.resizable(False, False)
+            edit_dialog.transient(dialog)
+            edit_dialog.grab_set()
+
+            frame = ttk.Frame(edit_dialog, padding=12)
+            frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(frame, text="部門名（シート名）:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            summary_name_var = tk.StringVar(value="")
+            ttk.Entry(frame, textvariable=summary_name_var, width=30).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="部門名（トーナメント表）:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            match_name_var = tk.StringVar(value="")
+            ttk.Entry(frame, textvariable=match_name_var, width=30).grid(row=1, column=1, sticky=tk.W, pady=5)
+            ttk.Label(frame, text="（空欄の場合はシート名を使用）").grid(row=1, column=2, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="試合場1:").grid(row=2, column=0, sticky=tk.W, pady=5)
+            place1_var = tk.StringVar(value="第一試合場")
+            ttk.Entry(frame, textvariable=place1_var, width=30).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="試合場2:").grid(row=3, column=0, sticky=tk.W, pady=5)
+            place2_var = tk.StringVar(value="")
+            ttk.Entry(frame, textvariable=place2_var, width=30).grid(row=3, column=1, sticky=tk.W, pady=5)
+            ttk.Label(frame, text="（空欄の場合は非表示）").grid(row=3, column=2, sticky=tk.W, pady=5)
+
+            btn_frame = ttk.Frame(frame)
+            btn_frame.grid(row=4, column=0, columnspan=3, pady=(10, 0))
+
+            def on_ok():
+                summary_name = summary_name_var.get().strip()
+                if not summary_name:
+                    messagebox.showerror("入力エラー", "部門名（シート名）を入力してください。", parent=edit_dialog)
+                    return
+
+                match_name = match_name_var.get().strip() or None
+                new_cat = {
+                    "summary_name": summary_name,
+                    "match_name": match_name,
+                    "match_place1": place1_var.get().strip(),
+                    "match_place2": place2_var.get().strip()
+                }
+                settings["categories"].append(new_cat)
+                load_categories()
+                edit_dialog.destroy()
+
+            ttk.Button(btn_frame, text="OK", command=on_ok).pack(side=tk.RIGHT)
+            ttk.Button(btn_frame, text="キャンセル", command=edit_dialog.destroy).pack(side=tk.RIGHT, padx=(0, 6))
+
+            edit_dialog.update_idletasks()
+            x = dialog.winfo_x() + (dialog.winfo_width() - edit_dialog.winfo_width()) // 2
+            y = dialog.winfo_y() + (dialog.winfo_height() - edit_dialog.winfo_height()) // 2
+            edit_dialog.geometry(f"+{x}+{y}")
+
+        def edit_category():
+            selection = tree.selection()
+            if not selection:
+                messagebox.showinfo("選択なし", "編集する部門を選択してください。", parent=dialog)
+                return
+
+            index = tree.index(selection[0])
+            cat = settings["categories"][index]
+
+            edit_dialog = tk.Toplevel(dialog)
+            edit_dialog.title("部門の編集")
+            edit_dialog.resizable(False, False)
+            edit_dialog.transient(dialog)
+            edit_dialog.grab_set()
+
+            frame = ttk.Frame(edit_dialog, padding=12)
+            frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(frame, text="部門名（シート名）:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            summary_name_var = tk.StringVar(value=cat["summary_name"])
+            ttk.Entry(frame, textvariable=summary_name_var, width=30).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="部門名（トーナメント表）:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            match_name_var = tk.StringVar(value=cat.get("match_name") or "")
+            ttk.Entry(frame, textvariable=match_name_var, width=30).grid(row=1, column=1, sticky=tk.W, pady=5)
+            ttk.Label(frame, text="（空欄の場合はシート名を使用）").grid(row=1, column=2, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="試合場1:").grid(row=2, column=0, sticky=tk.W, pady=5)
+            place1_var = tk.StringVar(value=cat.get("match_place1", ""))
+            ttk.Entry(frame, textvariable=place1_var, width=30).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+            ttk.Label(frame, text="試合場2:").grid(row=3, column=0, sticky=tk.W, pady=5)
+            place2_var = tk.StringVar(value=cat.get("match_place2", ""))
+            ttk.Entry(frame, textvariable=place2_var, width=30).grid(row=3, column=1, sticky=tk.W, pady=5)
+            ttk.Label(frame, text="（空欄の場合は非表示）").grid(row=3, column=2, sticky=tk.W, pady=5)
+
+            btn_frame = ttk.Frame(frame)
+            btn_frame.grid(row=4, column=0, columnspan=3, pady=(10, 0))
+
+            def on_ok():
+                summary_name = summary_name_var.get().strip()
+                if not summary_name:
+                    messagebox.showerror("入力エラー", "部門名（シート名）を入力してください。", parent=edit_dialog)
+                    return
+
+                match_name = match_name_var.get().strip() or None
+                settings["categories"][index] = {
+                    "summary_name": summary_name,
+                    "match_name": match_name,
+                    "match_place1": place1_var.get().strip(),
+                    "match_place2": place2_var.get().strip()
+                }
+                load_categories()
+                edit_dialog.destroy()
+
+            ttk.Button(btn_frame, text="OK", command=on_ok).pack(side=tk.RIGHT)
+            ttk.Button(btn_frame, text="キャンセル", command=edit_dialog.destroy).pack(side=tk.RIGHT, padx=(0, 6))
+
+            edit_dialog.update_idletasks()
+            x = dialog.winfo_x() + (dialog.winfo_width() - edit_dialog.winfo_width()) // 2
+            y = dialog.winfo_y() + (dialog.winfo_height() - edit_dialog.winfo_height()) // 2
+            edit_dialog.geometry(f"+{x}+{y}")
+
+        def delete_category():
+            selection = tree.selection()
+            if not selection:
+                messagebox.showinfo("選択なし", "削除する部門を選択してください。", parent=dialog)
+                return
+
+            ok = messagebox.askyesno("確認", "選択した部門を削除してよろしいですか？", parent=dialog)
+            if not ok:
+                return
+
+            index = tree.index(selection[0])
+            del settings["categories"][index]
+            load_categories()
+
+        def move_up():
+            selection = tree.selection()
+            if not selection:
+                return
+            index = tree.index(selection[0])
+            if index > 0:
+                settings["categories"][index], settings["categories"][index - 1] = \
+                    settings["categories"][index - 1], settings["categories"][index]
+                load_categories()
+                children = tree.get_children()
+                if index - 1 < len(children):
+                    tree.selection_set(children[index - 1])
+
+        def move_down():
+            selection = tree.selection()
+            if not selection:
+                return
+            index = tree.index(selection[0])
+            if index < len(settings["categories"]) - 1:
+                settings["categories"][index], settings["categories"][index + 1] = \
+                    settings["categories"][index + 1], settings["categories"][index]
+                load_categories()
+                children = tree.get_children()
+                if index + 1 < len(children):
+                    tree.selection_set(children[index + 1])
+
+        ttk.Button(button_frame, text="追加", command=add_category).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="編集", command=edit_category).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="削除", command=delete_category).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="↑", command=move_up, width=3).pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Button(button_frame, text="↓", command=move_down, width=3).pack(side=tk.LEFT, padx=(0, 5))
+
+        # ===== OK/キャンセルボタン =====
+        bottom_frame = ttk.Frame(main_frame)
+        bottom_frame.pack(fill=tk.X, pady=(10, 0))
+
+        result = {"stdin_text": None, "settings_ok": False}
+
+        def on_ok():
+            # Seedバリデーション
+            if choice.get() == "manual":
+                value = entry_var.get().strip()
+                if not value.isdigit():
+                    messagebox.showerror("入力エラー", "数字を指定する場合は半角数字のみで入力してください。", parent=dialog)
+                    return
+
+            # 大会設定バリデーション
+            tournament_date = date_var.get().strip()
+            if not tournament_date:
+                messagebox.showerror("入力エラー", "大会開催日を入力してください。", parent=dialog)
+                return
+
+            if len(settings["categories"]) == 0:
+                messagebox.showerror("入力エラー", "部門が1つもありません。", parent=dialog)
+                return
+
+            # 設定を保存
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(os.path.join(os.getcwd(), event_dir))
+                settings["tournament_date"] = tournament_date
+                success = defines.save_tournament_settings(tournament_date, settings["categories"])
+                if not success:
+                    messagebox.showerror("保存エラー", "設定の保存に失敗しました。", parent=dialog)
+                    return
+            finally:
+                os.chdir(old_cwd)
+
+            # Seed用の標準入力テキストを生成
+            if choice.get() == "previous":
+                result["stdin_text"] = "\n"
+            elif choice.get() == "new":
+                result["stdin_text"] = "new\n"
+            else:
+                result["stdin_text"] = entry_var.get().strip() + "\n"
+
+            result["settings_ok"] = True
+            dialog.destroy()
+
+        def on_cancel():
+            dialog.destroy()
+
+        ttk.Button(bottom_frame, text="OK", command=on_ok).pack(side=tk.RIGHT)
+        ttk.Button(bottom_frame, text="キャンセル", command=on_cancel).pack(side=tk.RIGHT, padx=(0, 6))
+
+        on_choice_change()
+
+        # ダイアログを親ウィンドウ中央に配置
+        dialog.update_idletasks()
+        parent_w = self.winfo_width()
+        parent_h = self.winfo_height()
+        dialog_w = dialog.winfo_width()
+        dialog_h = dialog.winfo_height()
+
+        if parent_w <= 1 or parent_h <= 1 or not self.winfo_ismapped():
+            screen_w = dialog.winfo_screenwidth()
+            screen_h = dialog.winfo_screenheight()
+            x = max(0, (screen_w - dialog_w) // 2)
+            y = max(0, (screen_h - dialog_h) // 2)
+        else:
+            parent_x = self.winfo_rootx()
+            parent_y = self.winfo_rooty()
+            x = parent_x + max(0, (parent_w - dialog_w) // 2)
+            y = parent_y + max(0, (parent_h - dialog_h) // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        dialog.wait_window()
+        return result["stdin_text"], result["settings_ok"]
 
     def _get_spring_booklet_output_path(self, event_dir):
         if event_dir != "春の大会":

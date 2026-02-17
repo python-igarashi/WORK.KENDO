@@ -102,17 +102,39 @@ print(f"抽選結果番号 [{seed}] で実行します。")
 Defines.save_tournament_no_logfile(seed, seed_time) # 抽選結果番号をファイルに保存
 
 
-match_date = "2025.10.26" # 大会開催日
+# トーナメント設定を読み込む
+settings = Defines.load_tournament_settings()
+if settings is None:
+	print("エラー: トーナメント設定ファイルが見つからないか、読み込みに失敗しました。")
+	print("デフォルト設定で実行します...")
+	import os
+	event_dir = os.path.basename(os.getcwd())
+	settings = Defines.get_default_tournament_settings(event_dir)
+	if settings is None:
+		print("エラー: デフォルト設定の取得に失敗しました。プログラムを終了します。")
+		import sys
+		sys.exit(1)
 
-Create("小学1･2年生の部",                                        seed=seed, match_date=match_date, match_place1="第一試合場", init_workbook=True)
-Create("小学3･4年生の部",                                        seed=seed, match_date=match_date, match_place1="第一試合場")
-Create("小学5･6年生の部",                                        seed=seed, match_date=match_date, match_place1="第二試合場")
-Create("中学生女子の部",                                         seed=seed, match_date=match_date, match_place1="第二試合場")
-Create("中学1年生男子の部",                                      seed=seed, match_date=match_date, match_place1="第三試合場")
-Create("中学2･3年生男子の部",                                    seed=seed, match_date=match_date, match_place1="第三試合場")
-Create("一般女子5段以下の部", match_name="一般女子五段以下の部", seed=seed, match_date=match_date, match_place1="第一試合場(選手番号1～4)",  match_place2="第二試合場(選手番号5～9)")
-Create("一般男子3段以下の部", match_name="一般男子三段以下の部", seed=seed, match_date=match_date, match_place1="第一試合場(選手番号1～16)", match_place2="第二試合場(選手番号17～32)")
-Create("一般男子4･5段の部",   match_name="一般男子四･五段の部",  seed=seed, match_date=match_date, match_place1="第三試合場")
-Create("一般6･7段の部",       match_name="一般六･七段の部",      seed=seed, match_date=match_date, match_place1="第一試合場(選手番号1～7)",  match_place2="第二試合場(選手番号8～14)")
+match_date = settings["tournament_date"]
+categories = settings["categories"]
+
+# 各部門のトーナメント作成
+for i, category in enumerate(categories):
+	summary_name = category["summary_name"]
+	match_name = category.get("match_name") or None
+	match_place1 = category.get("match_place1", "")
+	match_place2 = category.get("match_place2", "")
+	init_workbook = (i == 0)  # 最初の部門のみTrue
+
+	Create(
+		summary_name,
+		seed=seed,
+		match_name=match_name,
+		match_date=match_date,
+		match_place1=match_place1,
+		match_place2=match_place2,
+		hide_groupname=False,  # 秋の大会は常にFalse（個人戦）
+		init_workbook=init_workbook
+	)
 
 print(f"抽選結果番号 [{seed}] での抽選を終了しました。")
