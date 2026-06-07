@@ -71,10 +71,28 @@ def backup_existing_file(dst_path, repo_dir, backup_dir):
     return True
 
 
+def files_are_same(src_path, dst_path):
+    if not os.path.exists(dst_path):
+        return False
+
+    if os.path.getsize(src_path) != os.path.getsize(dst_path):
+        return False
+
+    with open(src_path, "rb") as src_file, open(dst_path, "rb") as dst_file:
+        while True:
+            src_chunk = src_file.read(1024 * 1024)
+            dst_chunk = dst_file.read(1024 * 1024)
+            if src_chunk != dst_chunk:
+                return False
+            if not src_chunk:
+                return True
+
+
 def copy_latest_files(src_root, repo_dir, backup_dir):
     copied = 0
     backed_up = 0
     skipped = 0
+    unchanged = 0
 
     for root, dirs, files in os.walk(src_root):
         dirs[:] = [dirname for dirname in dirs if dirname not in EXCLUDE_DIRS]
@@ -88,6 +106,10 @@ def copy_latest_files(src_root, repo_dir, backup_dir):
                 skipped += 1
                 continue
 
+            if files_are_same(src_path, dst_path):
+                unchanged += 1
+                continue
+
             if backup_existing_file(dst_path, repo_dir, backup_dir):
                 backed_up += 1
 
@@ -95,7 +117,7 @@ def copy_latest_files(src_root, repo_dir, backup_dir):
             shutil.copy2(src_path, dst_path)
             copied += 1
 
-    return copied, backed_up, skipped
+    return copied, backed_up, skipped, unchanged
 
 
 def download_zip(zip_path):
@@ -129,13 +151,16 @@ def main():
         src_root = find_extracted_root(extract_dir)
 
         print("ファイルを更新しています...")
-        copied, backed_up, skipped = copy_latest_files(src_root, repo_dir, backup_dir)
+        copied, backed_up, skipped, unchanged = copy_latest_files(
+            src_root, repo_dir, backup_dir
+        )
 
     print("")
     print("更新が完了しました。")
     print(f"更新ファイル数: {copied}")
     print(f"バックアップファイル数: {backed_up}")
     print(f"更新対象外ファイル数: {skipped}")
+    print(f"変更なしファイル数: {unchanged}")
     if backed_up:
         print(f"バックアップ先: {backup_dir}")
     print("")
