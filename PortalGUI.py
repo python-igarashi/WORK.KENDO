@@ -87,6 +87,11 @@ class PortalGUI(tk.Tk):
             rb.pack(side=tk.LEFT, padx=6)
             self.event_radiobuttons.append(rb)
 
+        self.update_program_button = ttk.Button(
+            top, text="最新プログラムに更新", command=self._run_update_program
+        )
+        self.update_program_button.pack(side=tk.RIGHT)
+
         info_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
         info_frame.pack(fill=tk.X)
 
@@ -469,6 +474,8 @@ class PortalGUI(tk.Tk):
                 child.config(state=state)
         for rb in self.event_radiobuttons:
             rb.config(state=state)
+        if hasattr(self, "update_program_button"):
+            self.update_program_button.config(state=state)
         if state == tk.DISABLED:
             self.status_label.config(text="実行中…")
             self.status_label.config(fg="#0078D7", cursor="")
@@ -485,6 +492,45 @@ class PortalGUI(tk.Tk):
                 self.status_label.pack(side=tk.LEFT)
             else:
                 self.status_label.pack_forget()
+
+    def _run_update_program(self):
+        if self.running:
+            return
+
+        ok = messagebox.askyesno(
+            "確認",
+            "最新版をダウンロードしてプログラムを更新します。\n"
+            "完了後、PortalGUIの再起動が必要です。\n\n"
+            "実行してよろしいですか？",
+        )
+        if not ok:
+            return
+
+        script = "DownloadLatest.py"
+        script_path = os.path.join(os.getcwd(), script)
+        if not os.path.exists(script_path):
+            messagebox.showerror("エラー", f"{script} が見つかりません。")
+            return
+
+        self.pending_output_file_path = ""
+        self.status_path = ""
+        self.output_text.configure(state=tk.NORMAL)
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert(tk.END, f"\n$ {script}\n")
+        self.output_text.configure(state=tk.DISABLED)
+        self.output_text.see(tk.END)
+
+        self.last_action_text = "最新プログラムに更新"
+        self.last_action_script = script
+        self.last_action_event_name = ""
+        self.last_action_event_dir = ""
+        self.running = True
+        self._set_buttons_state(tk.DISABLED)
+
+        thread = threading.Thread(
+            target=self._worker_run, args=("", script, None), daemon=True
+        )
+        thread.start()
 
     def _run_script(self, event, script, dangerous, event_name, label):
         if self.running:
@@ -529,10 +575,11 @@ class PortalGUI(tk.Tk):
 
     def _worker_run(self, event_dir, script, stdin_text):
         try:
+            cwd = os.path.join(os.getcwd(), event_dir) if event_dir else os.getcwd()
             cmd = [sys.executable, "-u", script]
             proc = subprocess.Popen(
                 cmd,
-                cwd=os.path.join(os.getcwd(), event_dir),
+                cwd=cwd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE if stdin_text is not None else None,
