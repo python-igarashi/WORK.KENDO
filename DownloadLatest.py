@@ -30,6 +30,18 @@ EXCLUDE_PATTERNS = [
     "*.log",
 ]
 
+TEXT_FILE_EXTENSIONS = {
+    ".py",
+    ".md",
+    ".json",
+    ".txt",
+}
+
+TEXT_FILE_NAMES = {
+    ".gitattributes",
+    ".gitignore",
+}
+
 
 def should_skip(relative_path):
     parts = relative_path.split(os.sep)
@@ -71,21 +83,46 @@ def backup_existing_file(dst_path, repo_dir, backup_dir):
     return True
 
 
-def files_are_same(src_path, dst_path):
+def is_text_file(relative_path):
+    name = os.path.basename(relative_path).lower()
+    _, ext = os.path.splitext(name)
+    return name in TEXT_FILE_NAMES or ext in TEXT_FILE_EXTENSIONS
+
+
+def read_bytes(path):
+    with open(path, "rb") as file:
+        return file.read()
+
+
+def normalize_newlines(data):
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def files_are_same(src_path, dst_path, relative_path):
     if not os.path.exists(dst_path):
         return False
 
-    if os.path.getsize(src_path) != os.path.getsize(dst_path):
-        return False
+    src_data = read_bytes(src_path)
+    dst_data = read_bytes(dst_path)
 
-    with open(src_path, "rb") as src_file, open(dst_path, "rb") as dst_file:
-        while True:
-            src_chunk = src_file.read(1024 * 1024)
-            dst_chunk = dst_file.read(1024 * 1024)
-            if src_chunk != dst_chunk:
-                return False
-            if not src_chunk:
-                return True
+    if src_data == dst_data:
+        return True
+
+    if is_text_file(relative_path):
+        return normalize_newlines(src_data) == normalize_newlines(dst_data)
+
+    return False
+
+
+def copy_latest_file(src_path, dst_path, relative_path):
+    if is_text_file(relative_path):
+        data = normalize_newlines(read_bytes(src_path)).replace(b"\n", b"\r\n")
+        with open(dst_path, "wb") as dst_file:
+            dst_file.write(data)
+        shutil.copystat(src_path, dst_path)
+        return
+
+    shutil.copy2(src_path, dst_path)
 
 
 def copy_latest_files(src_root, repo_dir, backup_dir):
@@ -106,7 +143,7 @@ def copy_latest_files(src_root, repo_dir, backup_dir):
                 skipped += 1
                 continue
 
-            if files_are_same(src_path, dst_path):
+            if files_are_same(src_path, dst_path, relative_path):
                 unchanged += 1
                 continue
 
@@ -114,7 +151,7 @@ def copy_latest_files(src_root, repo_dir, backup_dir):
                 backed_up += 1
 
             ensure_parent_dir(dst_path)
-            shutil.copy2(src_path, dst_path)
+            copy_latest_file(src_path, dst_path, relative_path)
             copied += 1
 
     return copied, backed_up, skipped, unchanged
