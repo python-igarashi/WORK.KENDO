@@ -141,7 +141,7 @@ class booklet:
 				
 				# 団体名
 				ws.cell(row=row + mergin, column=col + 0 + mergin, value="団体名")
-				ws.cell(row=row + mergin, column=col + 1 + mergin, value=team.name)
+				ws.cell(row=row + mergin, column=col + 1 + mergin, value=Defines.get_formal_groupname(team.name, self.summary_name))
 				
 				# 監督
 				row += 1

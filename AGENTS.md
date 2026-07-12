@@ -27,6 +27,8 @@
 Dependencies are listed in the root `README.md` and installed via `pip install ...`.
 
 ## Coding Style & Naming Conventions
+- 改行コードは CRLF（CR+LF）を使用する。
+- テキストファイルのエンコードは UTF-8（BOM なし）を使用する。
 - Match existing indentation and formatting in the file you touch; avoid sweeping reformatting.
 - Prefer Python `snake_case` for variables and functions, and keep script names aligned with the numbered workflow (e.g., `01_*.py`, `02_*.py`).
 - Keep configuration in `Defines.py` rather than hard-coding in multiple scripts.

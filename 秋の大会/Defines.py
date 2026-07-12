@@ -46,9 +46,9 @@ summary_staff = [
   "本部その他",
 ]
 
-# 大会プログラム冊子用の団体名表記を取得するメソッド
-def get_booklet_groupname(groupname, summary_name):
-	# 団体名を略称のままにしたい場合はこちら
+# 正式の団体名表記を取得するメソッド
+def get_formal_groupname(groupname, summary_name):
+	# シート名のままにしたい場合はこちら
 	#return groupname
 	
 	# 長い団体名に変換したい場合はこちら（↑をコメントアウトしてこちらを有効にする）
@@ -84,6 +84,27 @@ def get_booklet_groupname(groupname, summary_name):
 			return groupname.replace(src, "桐朋女子中学校")
 		elif summary_name.find("一般") >= 0:
 			return groupname.replace(src, "桐朋女子高等学校")
+	
+	return groupname
+
+# 略式の団体名表記を取得するメソッド
+def get_simple_groupname(groupname, summary_name):
+	src = groupname.split(" ")[0] # チーム名末尾のアルファベットを削除
+	
+	if src == "明治":
+		if summary_name.find("中学") >= 0:
+			return groupname.replace(src, "明治中")
+		elif summary_name.find("一般") >= 0:
+			return groupname.replace(src, "明治高")
+	
+	if src == "桐朋女子":
+		if summary_name.find("中学") >= 0:
+			return groupname.replace(src, "桐朋女子中")
+		elif summary_name.find("一般") >= 0:
+			return groupname.replace(src, "桐朋女子高")
+	
+	if src == "アメリカン":
+		return groupname.replace(src, "ASIJ")
 	
 	return groupname
 

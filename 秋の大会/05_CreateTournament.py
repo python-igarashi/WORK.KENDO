@@ -42,7 +42,6 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 	#print(f"{summary_name}: 出力中...")
 	l_participant = []
 	for value in summary:
-		#groupname = Defines.get_booklet_groupname(value[indexof_groupname], summary_name)
 		groupname = value[indexof_groupname]
 		l_participant.append(Tournament.Participant(value[0], value[1], groupname))
 	
@@ -57,7 +56,9 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 	Tournament.save_bracket_xlsx(
 	    rounds, path = f"{Defines.tournament_folder}\\Tournament_秋.xlsx", summary_name = summary_name,
 	    match_name = match_name if match_name != None else summary_name, match_date = match_date, match_place1 = match_place1, match_place2 = match_place2,
-	    hide_groupname = hide_groupname, init_workbook = init_workbook)
+	    hide_groupname = hide_groupname, init_workbook = init_workbook,
+	    playername_formatter = None,
+	    groupname_formatter = Defines.get_simple_groupname)
 	
 	
 	print(f"{summary_name}: 集計を終了しました。")

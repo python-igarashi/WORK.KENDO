@@ -72,7 +72,9 @@ def Create(summary_name, seed=None, print_match_no=True, match_name=None, match_
 	Tournament.save_bracket_xlsx(
 	    rounds, path = f"{Defines.tournament_folder}\\Tournament_春.xlsx", summary_name = summary_name,
 	    match_name = match_name if match_name != None else summary_name, match_date = match_date, match_place1 = match_place1, match_place2 = match_place2,
-	    hide_groupname = hide_groupname, init_workbook = init_workbook)
+	    hide_groupname = hide_groupname, init_workbook = init_workbook,
+	    playername_formatter = Defines.get_formal_groupname,
+	    groupname_formatter = None)
 	
 	
 	print(f"{summary_name}: 集計を終了しました。")

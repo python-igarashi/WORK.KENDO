@@ -620,6 +620,8 @@ def save_bracket_xlsx(
 	match_date = "2099.12.31",
 	match_place1 = "第一試合場",
 	match_place2 = "第二試合場",
+	playername_formatter = None, # 選手名称（C列）を変換するメソッド
+	groupname_formatter = None, # 団体名（D列）を変換するメソッド
 ):
 	# ─────────────────────────────
 	#  Excel 初期化
@@ -751,8 +753,14 @@ def save_bracket_xlsx(
 		# 選手情報出力
 		ws.cell(row, 2).value = player_no
 		kana = f"\n({player.kana})" if player.kana != None and player.kana != "" else ""
-		ws.cell(row, 3).value = player.name + kana
-		ws.cell(row, 4).value = f"[{player.groupname}]"
+		name = player.name
+		if playername_formatter != None:
+			name = playername_formatter(name, summary_name)
+		groupname = player.groupname
+		if groupname_formatter != None and groupname != None:
+			groupname = groupname_formatter(groupname, summary_name)
+		ws.cell(row, 3).value = name + kana
+		ws.cell(row, 4).value = f"[{groupname}]"
 
 	for match in r0:
 		if is_real(match.left):
