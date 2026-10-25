@@ -127,15 +127,18 @@ for i, category in enumerate(categories):
 	match_place2 = category.get("match_place2", "")
 	init_workbook = (i == 0)  # 最初の部門のみTrue
 
-	Create(
-		summary_name,
-		seed=seed,
-		match_name=match_name,
-		match_date=match_date,
-		match_place1=match_place1,
-		match_place2=match_place2,
-		hide_groupname=False,  # 秋の大会は常にFalse（個人戦）
-		init_workbook=init_workbook
-	)
+	try:
+		Create(
+			summary_name,
+			seed=seed,
+			match_name=match_name,
+			match_date=match_date,
+			match_place1=match_place1,
+			match_place2=match_place2,
+			hide_groupname=False,  # 秋の大会は常にFalse（個人戦）
+			init_workbook=init_workbook
+		)
+	except:
+		pass
 
 print(f"抽選結果番号 [{seed}] での抽選を終了しました。")
